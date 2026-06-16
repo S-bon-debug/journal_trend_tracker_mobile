@@ -245,8 +245,6 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Đang chọn ID: $_selectedKeywordId', style: const TextStyle(color: Colors.yellow, fontSize: 10)),
-              const SizedBox(height: 8),
               Wrap(
                 spacing: 8.0,
                 runSpacing: 8.0,
