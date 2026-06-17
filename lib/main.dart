@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'features/trends/presentation/screens/trends_dashboard_screen.dart';
 import 'features/trends/presentation/screens/export_report_screen.dart';
+import 'ui/screens/papers_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,6 +40,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     TrendsDashboardScreen(),
     ExportReportScreen(),
+    PapersScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -62,6 +64,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.file_download),
             label: 'Export Reports',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.library_books),
+            label: 'Papers',
           ),
         ],
         currentIndex: _selectedIndex,
