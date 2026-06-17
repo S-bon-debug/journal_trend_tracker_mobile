@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'features/trends/presentation/screens/trends_dashboard_screen.dart';
 import 'features/trends/presentation/screens/export_report_screen.dart';
-import 'ui/screens/papers_screen.dart';
+import 'features/papers/presentation/screens/papers_screen.dart';
 
 void main() {
   runApp(const MyApp());
