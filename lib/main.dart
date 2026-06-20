@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'features/trends/presentation/screens/trends_dashboard_screen.dart';
-import 'features/trends/presentation/screens/export_report_screen.dart';
-import 'features/papers/presentation/screens/papers_screen.dart';
+import 'userservice/trends/presentation/screens/trends_dashboard_screen.dart';
+import 'userservice/trends/presentation/screens/export_report_screen.dart';
+import 'userservice/papers/presentation/screens/papers_screen.dart';
+import 'userservice/notifications/presentation/screens/notifications_screen.dart';
+import 'userservice/profile/presentation/screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -41,6 +43,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     TrendsDashboardScreen(),
     ExportReportScreen(),
     PapersScreen(),
+    NotificationsScreen(),
+    ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -56,18 +60,27 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
-            label: 'Trends Dashboard',
+            label: 'Trends',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.file_download),
-            label: 'Export Reports',
+            label: 'Export',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
             label: 'Papers',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.notifications),
+            label: 'Notifications',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
@@ -79,3 +92,4 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 }
+
