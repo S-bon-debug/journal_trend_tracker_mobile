@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/paged_result_dto.dart';
 import '../models/paper_summary_dto.dart';
@@ -11,10 +9,14 @@ class PaperApiService {
   // If running on Android emulator, use 10.0.2.2 to access host localhost.
   // Otherwise (iOS simulator, Web, Desktop), use localhost.
   static String get baseUrl {
-    if (!kIsWeb && Platform.isAndroid) {
-      return 'http://10.0.2.2:5145/api';
-    }
-    return 'http://localhost:5145/api';
+    // Deployed Backend (Render API Gateway)
+    return 'https://api-gateway-999k.onrender.com/api';
+
+    // Local Backend (Direct Service)
+    // if (!kIsWeb && Platform.isAndroid) {
+    //   return 'http://10.0.2.2:5145/api';
+    // }
+    // return 'http://localhost:5145/api';
   }
 
   Future<PagedResultDto<PaperSummaryDto>> searchPapers(PaperFilterDto filter) async {
