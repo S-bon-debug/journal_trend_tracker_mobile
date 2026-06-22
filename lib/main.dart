@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'userservice/trends/presentation/screens/trends_dashboard_screen.dart';
-import 'userservice/trends/presentation/screens/export_report_screen.dart';
-import 'userservice/papers/presentation/screens/papers_screen.dart';
-import 'userservice/notifications/presentation/screens/notifications_screen.dart';
-import 'userservice/profile/presentation/screens/profile_screen.dart';
+import 'features/trend/presentation/screens/trends_dashboard_screen.dart';
+import 'features/paper/presentation/screens/papers_screen.dart';
+import 'features/user/profile/presentation/screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,6 +27,29 @@ class MyApp extends StatelessWidget {
   }
 }
 
+class PlaceholderScreen extends StatelessWidget {
+  final String title;
+  const PlaceholderScreen({super.key, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF121212),
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Center(
+        child: Text(
+          '$title is under construction',
+          style: const TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+      ),
+    );
+  }
+}
+
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -37,13 +58,13 @@ class MainNavigationScreen extends StatefulWidget {
 }
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2; // Default to Paper or Trend
 
   static const List<Widget> _widgetOptions = <Widget>[
-    TrendsDashboardScreen(),
-    ExportReportScreen(),
+    PlaceholderScreen(title: 'Admin Service'),
+    PlaceholderScreen(title: 'Identity Service'),
     PapersScreen(),
-    NotificationsScreen(),
+    TrendsDashboardScreen(),
     ProfileScreen(),
   ];
 
@@ -63,24 +84,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         type: BottomNavigationBarType.fixed,
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Trends',
+            icon: Icon(Icons.admin_panel_settings),
+            label: 'Admin',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.file_download),
-            label: 'Export',
+            icon: Icon(Icons.security),
+            label: 'Identity',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.library_books),
-            label: 'Papers',
+            label: 'Paper',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.trending_up),
+            label: 'Trend',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'User',
           ),
         ],
         currentIndex: _selectedIndex,
