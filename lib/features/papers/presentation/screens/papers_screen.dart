@@ -112,6 +112,31 @@ class _PapersScreenState extends State<PapersScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đang kích hoạt tiến trình lấy bài báo...')),
+          );
+          try {
+            await _apiService.triggerSyncPapers();
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Thành công! Vui lòng chờ 1-2 phút để bài báo tải về.')),
+            );
+            
+            // Reload list
+            _fetchPapers(); 
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Lỗi: $e')),
+            );
+          }
+        },
+        icon: const Icon(Icons.sync),
+        label: const Text('Đồng bộ'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+      ),
     );
   }
 
@@ -164,6 +189,11 @@ class _PapersScreenState extends State<PapersScreen> {
             child: TextField(
               controller: _searchController,
               textInputAction: TextInputAction.search,
+              style: const TextStyle(
+                color: Color(0xFF1A1D1E),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search by title, author, keyword...',
                 hintStyle: const TextStyle(color: Color(0xFFADB5BD)),

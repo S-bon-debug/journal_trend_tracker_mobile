@@ -55,4 +55,22 @@ class PaperApiService {
       throw Exception('Error fetching paper details: $e');
     }
   }
+  Future<void> triggerSyncPapers() async {
+    final uri = Uri.parse('https://api-gateway-999k.onrender.com/api/admin/sync-jobs/trigger');
+    try {
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 202 || response.statusCode == 200) {
+        print('✅ Đã ra lệnh đồng bộ thành công! Backend đang chạy ngầm kéo dữ liệu.');
+      } else {
+        throw Exception('Lỗi kích hoạt đồng bộ: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Lỗi mạng: $e');
+    }
+  }
 }
