@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'bookmarks_screen.dart';
 import '../../data/services/user_api_service.dart';
 import '../../data/models/user_models.dart';
+import '../../../auth/data/services/auth_api_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -185,11 +186,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          if (!_isEditing && !_isLoading && _error == null)
+          if (!_isEditing && !_isLoading && _error == null) ...[
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.redAccent),
+              onPressed: () async {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    backgroundColor: const Color(0xFF1E1E1E),
+                    title: const Text('Đăng xuất'),
+                    content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Đăng xuất', style: const TextStyle(color: Colors.redAccent)),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirm == true) {
+                  await AuthApiService().logout();
+                }
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.edit, color: Colors.purpleAccent),
               onPressed: () => setState(() => _isEditing = true),
-            )
+            ),
+          ]
           else if (_isEditing)
             _isSaving 
               ? const Padding(
