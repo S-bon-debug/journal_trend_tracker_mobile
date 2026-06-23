@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'bookmarks_screen.dart';
 import '../../data/services/user_api_service.dart';
 import '../../data/models/user_models.dart';
-import '../../../../../userservice/auth/data/services/auth_api_service.dart';
+import '../../../auth/data/services/auth_api_service.dart';
 import '../../../../settings/presentation/screens/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
