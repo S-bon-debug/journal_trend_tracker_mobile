@@ -6,7 +6,8 @@ import 'package:image_picker/image_picker.dart';
 import 'bookmarks_screen.dart';
 import '../../data/services/user_api_service.dart';
 import '../../data/models/user_models.dart';
-import '../../../auth/data/services/auth_api_service.dart';
+import '../../../../../userservice/auth/data/services/auth_api_service.dart';
+import '../../../../settings/presentation/screens/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -188,6 +189,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           if (!_isEditing && !_isLoading && _error == null) ...[
             IconButton(
+              icon: const Icon(Icons.settings, color: Colors.purpleAccent),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                ).then((_) {
+                  // Reload profile on return to check if anything updated (e.g. role change)
+                  _loadProfileData();
+                });
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.logout, color: Colors.redAccent),
               onPressed: () async {
                 final confirm = await showDialog<bool>(
@@ -217,8 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               icon: const Icon(Icons.edit, color: Colors.purpleAccent),
               onPressed: () => setState(() => _isEditing = true),
             ),
-          ]
-          else if (_isEditing)
+          ] else if (_isEditing)
             _isSaving 
               ? const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 16.0),
