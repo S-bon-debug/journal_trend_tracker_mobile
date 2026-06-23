@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'core/theme_manager.dart';
+import 'features/admin/presentation/screens/admin_dashboard_screen.dart';
 import 'features/trend/presentation/screens/trends_dashboard_screen.dart';
 import 'features/paper/presentation/screens/papers_screen.dart';
 import 'features/user/profile/presentation/screens/profile_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await ThemeManager.init();
   runApp(const MyApp());
 }
 
@@ -12,17 +16,30 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Journal Trend Tracker',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.purpleAccent,
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-      ),
-      home: const MainNavigationScreen(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeManager.themeModeNotifier,
+      builder: (context, currentThemeMode, _) {
+        return MaterialApp(
+          title: 'Journal Trend Tracker',
+          debugShowCheckedModeBanner: false,
+          themeMode: currentThemeMode,
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.purpleAccent,
+              brightness: Brightness.light,
+            ),
+            useMaterial3: true,
+          ),
+          darkTheme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.purpleAccent,
+              brightness: Brightness.dark,
+            ),
+            useMaterial3: true,
+          ),
+          home: const MainNavigationScreen(),
+        );
+      },
     );
   }
 }
@@ -61,7 +78,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 2; // Default to Paper or Trend
 
   static const List<Widget> _widgetOptions = <Widget>[
-    PlaceholderScreen(title: 'Admin Service'),
+    AdminDashboardScreen(),
     PlaceholderScreen(title: 'Identity Service'),
     PapersScreen(),
     TrendsDashboardScreen(),
@@ -76,6 +93,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
@@ -106,11 +124,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.purpleAccent,
-        unselectedItemColor: Colors.white54,
-        backgroundColor: const Color(0xFF1E1E1E),
+        unselectedItemColor: isDark ? Colors.white54 : Colors.black54,
+        backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
         onTap: _onItemTapped,
       ),
     );
   }
 }
+
 
