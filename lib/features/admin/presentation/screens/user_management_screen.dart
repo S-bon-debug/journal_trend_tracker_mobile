@@ -149,7 +149,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
-          'User Management',
+          'Quản lý Người dùng',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: Colors.transparent,
@@ -188,6 +188,27 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 )
               : Column(
                   children: [
+                    if (_apiService.isUsingMock)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.amberAccent.withOpacity(0.15),
+                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
+                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     // Search and filters bar
                     Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -244,11 +265,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                         });
                                       },
                                       items: const [
-                                        DropdownMenuItem(value: -1, child: Text('All Roles')),
-                                        DropdownMenuItem(value: 0, child: Text('Researcher')),
-                                        DropdownMenuItem(value: 1, child: Text('Lecturer')),
-                                        DropdownMenuItem(value: 2, child: Text('Student')),
-                                        DropdownMenuItem(value: 3, child: Text('Admin')),
+                                        DropdownMenuItem(value: -1, child: Text('Tất cả Vai trò')),
+                                        DropdownMenuItem(value: 0, child: Text('Nhà nghiên cứu')),
+                                        DropdownMenuItem(value: 1, child: Text('Giảng viên')),
+                                        DropdownMenuItem(value: 2, child: Text('Sinh viên')),
+                                        DropdownMenuItem(value: 3, child: Text('Quản trị viên')),
                                       ],
                                     ),
                                   ),
@@ -278,10 +299,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                         });
                                       },
                                       items: const [
-                                        DropdownMenuItem(value: -1, child: Text('All Statuses')),
-                                        DropdownMenuItem(value: 0, child: Text('Active')),
-                                        DropdownMenuItem(value: 1, child: Text('Locked')),
-                                        DropdownMenuItem(value: 2, child: Text('Pending')),
+                                        DropdownMenuItem(value: -1, child: Text('Tất cả Trạng thái')),
+                                        DropdownMenuItem(value: 0, child: Text('Đang hoạt động')),
+                                        DropdownMenuItem(value: 1, child: Text('Đã khóa')),
+                                        DropdownMenuItem(value: 2, child: Text('Chờ duyệt')),
                                       ],
                                     ),
                                   ),
@@ -431,7 +452,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                                   onPressed: () => _toggleUserStatus(user),
                                                 ),
                                                 Text(
-                                                  user.status == 0 ? 'Lock' : 'Unlock',
+                                                  user.status == 0 ? 'Khóa' : 'Mở khóa',
                                                   style: GoogleFonts.inter(
                                                     fontSize: 10,
                                                     fontWeight: FontWeight.w600,

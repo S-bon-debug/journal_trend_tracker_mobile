@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import '../../../../../core/network/dio_client.dart';
+import '../../../../../core/storage/token_storage.dart';
 import '../models/user_models.dart';
 
 class UserApiService {
@@ -15,13 +17,7 @@ class UserApiService {
     // return 'http://localhost:5210/';
   }
 
-  UserApiService({Dio? dio}) : _dio = dio ?? Dio() {
-    _dio.options.baseUrl = baseUrl;
-    _dio.options.headers = {
-      'X-User-Id': '11111111-1111-1111-1111-111111111111',
-      'Accept': 'application/json',
-    };
-  }
+  UserApiService({Dio? dio}) : _dio = dio ?? DioClient.dio;
 
   // 1. GET /api/users/profile
   Future<UserProfileDto> getProfile() async {
@@ -29,6 +25,17 @@ class UserApiService {
       final response = await _dio.get('users/profile');
       return UserProfileDto.fromJson(response.data);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 404) {
+        final storage = await TokenStorage.instance;
+        final userId = storage.getUserId() ?? '';
+        return UserProfileDto(
+          userId: userId,
+          bio: '',
+          institution: '',
+          researchFields: [],
+          websiteUrl: '',
+        );
+      }
       throw Exception('Failed to load user profile: ${e.message}');
     }
   }

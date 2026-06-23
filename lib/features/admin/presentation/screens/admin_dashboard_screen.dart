@@ -149,7 +149,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
-          'Admin Dashboard',
+          'Bảng điều khiển Admin',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: Colors.transparent,
@@ -162,8 +162,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           unselectedLabelColor: isDark ? Colors.white54 : Colors.black54,
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
           tabs: const [
-            Tab(text: 'Overview & Settings'),
-            Tab(text: 'Audit Logs'),
+            Tab(text: 'Tổng quan & Cấu hình'),
+            Tab(text: 'Nhật ký hoạt động'),
           ],
         ),
         actions: [
@@ -197,11 +197,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                     ),
                   ),
                 )
-              : TabBarView(
-                  controller: _tabController,
+              : Column(
                   children: [
-                    _buildOverviewTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
-                    _buildAuditLogsTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                    if (_apiService.isUsingMock)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.amberAccent.withOpacity(0.15),
+                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
+                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildOverviewTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                          _buildAuditLogsTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
     );
@@ -224,23 +251,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             mainAxisSpacing: 12,
             childAspectRatio: 1.4,
             children: [
-              _buildStatCard('Users', '$_totalUsersCount total', '$_lockedUsersCount locked', Icons.people, Colors.blueAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('API Sync', '$_activeSourcesCount active', 'Sources config', Icons.cloud_sync, Colors.greenAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('Sync Jobs', '$_totalJobsCount total', 'Paper tracking', Icons.history, Colors.amberAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('Audit Logs', '${_logs.length} logged', 'Recent changes', Icons.assignment, Colors.purpleAccent, cardColor, borderColor, textColor, subtitleColor),
+              _buildStatCard('Người dùng', 'Tổng số: $_totalUsersCount', 'Đã khóa: $_lockedUsersCount', Icons.people, Colors.blueAccent, cardColor, borderColor, textColor, subtitleColor),
+              _buildStatCard('Đồng bộ API', 'Hoạt động: $_activeSourcesCount', 'Cấu hình nguồn', Icons.cloud_sync, Colors.greenAccent, cardColor, borderColor, textColor, subtitleColor),
+              _buildStatCard('Lịch sử đồng bộ', 'Tổng số: $_totalJobsCount', 'Theo dõi bài báo', Icons.history, Colors.amberAccent, cardColor, borderColor, textColor, subtitleColor),
+              _buildStatCard('Nhật ký hệ thống', 'Tổng số: ${_logs.length}', 'Thay đổi gần đây', Icons.assignment, Colors.purpleAccent, cardColor, borderColor, textColor, subtitleColor),
             ],
           ),
           const SizedBox(height: 24),
 
           // Shortcut Tiles Section
-          Text('Quick Management', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+          Text('Quản lý nhanh', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: _buildShortcutCard(
-                  title: 'User Manager',
-                  desc: 'Lock/Unlock accounts',
+                  title: 'Quản lý Người dùng',
+                  desc: 'Khóa / Mở khóa tài khoản',
                   icon: Icons.people_outline,
                   color: Colors.blueAccent,
                   cardColor: cardColor,
@@ -255,8 +282,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               const SizedBox(width: 12),
               Expanded(
                 child: _buildShortcutCard(
-                  title: 'API Sync Manager',
-                  desc: 'Toggle API sources & logs',
+                  title: 'Quản lý Đồng bộ API',
+                  desc: 'Bật/tắt nguồn API & lịch sử',
                   icon: Icons.cloud_sync_outlined,
                   color: Colors.greenAccent,
                   cardColor: cardColor,
@@ -273,7 +300,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           const SizedBox(height: 24),
 
           // System Settings Editor
-          Text('System Configuration', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+          Text('Cấu hình hệ thống', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
@@ -343,7 +370,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.save),
                     label: Text(
-                      _isSavingSettings ? 'Saving...' : 'Save Configuration',
+                      _isSavingSettings ? 'Đang lưu...' : 'Lưu cấu hình',
                       style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                     onPressed: _isSavingSettings ? null : _saveSettings,
@@ -446,7 +473,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     if (_logs.isEmpty) {
       return Center(
         child: Text(
-          'Không có lịch sử nhật ký kiểm toán.',
+          'Không có nhật ký hoạt động.',
           style: GoogleFonts.inter(color: subtitleColor),
         ),
       );
@@ -496,18 +523,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               const SizedBox(height: 12),
               if (log.entityType != null)
                 Text(
-                  'Entity: ${log.entityType} (${log.entityId ?? 'None'})',
+                  'Đối tượng: ${log.entityType} (${log.entityId ?? 'Không có'})',
                   style: GoogleFonts.inter(fontSize: 13, color: textColor, fontWeight: FontWeight.w500),
                 ),
               const SizedBox(height: 4),
               Text(
-                'Admin ID: ${log.adminUserId}',
+                'Mã Admin: ${log.adminUserId}',
                 style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
               ),
               if (log.ipAddress != null) ...[
                 const SizedBox(height: 2),
                 Text(
-                  'IP Address: ${log.ipAddress}',
+                  'Địa chỉ IP: ${log.ipAddress}',
                   style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
                 ),
               ],
@@ -521,7 +548,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Old Value', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
+                            Text('Giá trị cũ', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Text(log.oldValue.toString(), style: GoogleFonts.firaCode(fontSize: 10, color: Colors.redAccent)),
                           ],
@@ -534,7 +561,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('New Value', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
+                            Text('Giá trị mới', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Text(log.newValue.toString(), style: GoogleFonts.firaCode(fontSize: 10, color: Colors.greenAccent)),
                           ],

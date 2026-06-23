@@ -58,12 +58,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _mapRoleToString(int role) {
     switch (role) {
+      case 0:
+        return 'Researcher';
       case 1:
         return 'Lecturer';
       case 2:
         return 'Student';
       case 3:
-        return 'Researcher';
+        return 'Admin';
       default:
         return 'User';
     }
@@ -80,6 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final bookmarks = await _apiService.getBookmarks();
       final follows = await _apiService.getFollows();
 
+      if (!mounted) return;
       setState(() {
         _bio = profile.bio ?? '';
         _institution = profile.institution ?? '';
@@ -96,6 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       // Fetch Identity Account details (Cross-service call)
       try {
         final account = await _apiService.getAccountDetails(profile.userId);
+        if (!mounted) return;
         setState(() {
           _name = account.fullName;
           _email = account.email;
@@ -110,10 +114,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         debugPrint('Failed to load identity account details: $innerError');
       }
 
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
@@ -139,6 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Simulate API call to update profile
     await Future.delayed(const Duration(seconds: 1));
 
+    if (!mounted) return;
     setState(() {
       _name = _nameController.text;
       _bio = _bioController.text;
@@ -311,6 +318,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         imageQuality: 85,
       );
       if (image != null) {
+        if (!mounted) return;
         setState(() {
           _pickedImage = image;
           _customAvatarUrl = null;

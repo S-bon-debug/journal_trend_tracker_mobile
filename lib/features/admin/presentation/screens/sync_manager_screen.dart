@@ -115,7 +115,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       backgroundColor: backgroundColor,
       appBar: AppBar(
         title: Text(
-          'API Sync Manager',
+          'Quản lý Đồng bộ API',
           style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: Colors.transparent,
@@ -128,8 +128,8 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           unselectedLabelColor: isDark ? Colors.white54 : Colors.black54,
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
           tabs: const [
-            Tab(text: 'API Sources'),
-            Tab(text: 'Sync History'),
+            Tab(text: 'Nguồn API'),
+            Tab(text: 'Lịch sử Đồng bộ'),
           ],
         ),
         actions: [
@@ -163,11 +163,38 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
                     ),
                   ),
                 )
-              : TabBarView(
-                  controller: _tabController,
+              : Column(
                   children: [
-                    _buildSourcesTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
-                    _buildHistoryTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                    if (_apiService.isUsingMock)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.amberAccent.withOpacity(0.15),
+                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
+                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _buildSourcesTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                          _buildHistoryTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
     );
@@ -236,17 +263,17 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
               Row(
                 children: [
                   Expanded(
-                    child: _buildDetailItem('Rate Limit', '${source.rateLimitPerSec}/sec', subtitleColor, textColor),
+                    child: _buildDetailItem('Giới hạn Tốc độ', '${source.rateLimitPerSec}/giây', subtitleColor, textColor),
                   ),
                   Expanded(
-                    child: _buildDetailItem('Interval', '${source.syncIntervalHours} hrs', subtitleColor, textColor),
+                    child: _buildDetailItem('Chu kỳ', '${source.syncIntervalHours} giờ', subtitleColor, textColor),
                   ),
                   Expanded(
                     child: _buildDetailItem(
-                      'Last Synced',
+                      'Đồng bộ gần nhất',
                       syncDate != null
                           ? '${syncDate.day}/${syncDate.month} ${syncDate.hour}:${syncDate.minute.toString().padLeft(2, '0')}'
-                          : 'Never',
+                          : 'Chưa bao giờ',
                       subtitleColor,
                       textColor,
                     ),
@@ -256,7 +283,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
               const SizedBox(height: 16),
 
               // Supported Fields Chip Row
-              Text('Supported Concepts', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: subtitleColor)),
+              Text('Lĩnh vực hỗ trợ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: subtitleColor)),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6.0,
@@ -310,9 +337,11 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       itemBuilder: (context, index) {
         final job = _syncJobs[index];
         final isSuccess = job.status.toLowerCase() == 'success';
+        final isFailed = job.status.toLowerCase() == 'failed';
         final statusColor = isSuccess
             ? Colors.greenAccent
-            : (job.status.toLowerCase() == 'failed' ? Colors.redAccent : Colors.amberAccent);
+            : (isFailed ? Colors.redAccent : Colors.amberAccent);
+        final statusText = isSuccess ? 'THÀNH CÔNG' : (isFailed ? 'THẤT BẠI' : job.status.toUpperCase());
         
         final started = job.startedAt != null ? DateTime.tryParse(job.startedAt!)?.toLocal() : null;
         final finished = job.finishedAt != null ? DateTime.tryParse(job.finishedAt!)?.toLocal() : null;
@@ -321,7 +350,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
         String duration = 'N/A';
         if (started != null && finished != null) {
           final diff = finished.difference(started);
-          duration = '${diff.inSeconds}s';
+          duration = '${diff.inSeconds} giây';
         }
 
         return Container(
@@ -346,7 +375,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
                       border: Border.all(color: statusColor.withOpacity(0.3)),
                     ),
                     child: Text(
-                      job.status.toUpperCase(),
+                      statusText,
                       style: GoogleFonts.inter(
                           fontWeight: FontWeight.bold, fontSize: 11, color: statusColor),
                     ),
@@ -368,7 +397,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
               
               if (job.queryParams != null)
                 Text(
-                  'Query: ${job.queryParams}',
+                  'Truy vấn: ${job.queryParams}',
                   style: GoogleFonts.inter(fontSize: 12, color: subtitleColor),
                 ),
               const Divider(height: 24, color: Colors.white10),
@@ -377,16 +406,16 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
               Row(
                 children: [
                   Expanded(
-                    child: _buildMetricCol('Fetched', job.papersFetched, subtitleColor, textColor),
+                    child: _buildMetricCol('Đã lấy', job.papersFetched, subtitleColor, textColor),
                   ),
                   Expanded(
-                    child: _buildMetricCol('Inserted', job.papersInserted, subtitleColor, textColor),
+                    child: _buildMetricCol('Đã thêm', job.papersInserted, subtitleColor, textColor),
                   ),
                   Expanded(
-                    child: _buildMetricCol('Updated', job.papersUpdated, subtitleColor, textColor),
+                    child: _buildMetricCol('Đã cập nhật', job.papersUpdated, subtitleColor, textColor),
                   ),
                   Expanded(
-                    child: _buildMetricCol('Duration', duration, subtitleColor, textColor),
+                    child: _buildMetricCol('Thời gian', duration, subtitleColor, textColor),
                   ),
                 ],
               ),

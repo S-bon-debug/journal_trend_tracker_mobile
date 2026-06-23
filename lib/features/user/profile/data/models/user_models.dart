@@ -139,12 +139,30 @@ class UserAccountDto {
   });
 
   factory UserAccountDto.fromJson(Map<String, dynamic> json) {
+    final rawRole = json['role'];
+    int parsedRole = 0;
+    if (rawRole is int) {
+      parsedRole = rawRole;
+    } else if (rawRole is String) {
+      final roleStr = rawRole.toLowerCase();
+      if (roleStr == 'admin') {
+        parsedRole = 3;
+      } else if (roleStr == 'student') {
+        parsedRole = 2;
+      } else if (roleStr == 'lecturer') {
+        parsedRole = 1;
+      } else if (roleStr == 'researcher') {
+        parsedRole = 0;
+      } else {
+        parsedRole = int.tryParse(roleStr) ?? 0;
+      }
+    }
     return UserAccountDto(
       id: json['id'] ?? '',
       fullName: json['fullName'] ?? '',
       email: json['email'] ?? '',
       avatarUrl: json['avatarUrl'],
-      role: json['role'] ?? 0,
+      role: parsedRole,
     );
   }
 }

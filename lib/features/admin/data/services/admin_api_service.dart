@@ -1,10 +1,32 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/network/jwt_interceptor.dart';
 import '../models/admin_models.dart';
 
 class AdminApiService {
   final Dio _dio;
+
+  // Cache mock data to maintain state locally during mock mode
+  List<AdminUserDto>? _cachedMockUsers;
+  List<ApiSourceDto>? _cachedMockApiSources;
+  List<ApiSyncJobDto>? _cachedMockSyncJobs;
+  List<SystemSettingDto>? _cachedMockSettings;
+  List<AuditLogDto>? _cachedMockAuditLogs;
+
+  // Track if any endpoints are currently operating in mock fallback mode
+  bool usersLoadedFromMock = false;
+  bool apiSourcesLoadedFromMock = false;
+  bool syncJobsLoadedFromMock = false;
+  bool settingsLoadedFromMock = false;
+  bool logsLoadedFromMock = false;
+
+  bool get isUsingMock =>
+      usersLoadedFromMock ||
+      apiSourcesLoadedFromMock ||
+      syncJobsLoadedFromMock ||
+      settingsLoadedFromMock ||
+      logsLoadedFromMock;
 
   static String get baseUrl {
     // YARP Gateway route for admin service
@@ -20,20 +42,13 @@ class AdminApiService {
       'Accept': 'application/json',
     };
     
-    // Setup request interceptor to automatically add authorization token
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        try {
-          final prefs = await SharedPreferences.getInstance();
-          final token = prefs.getString('dev_jwt_token');
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-        } catch (e) {
-          debugPrint('Error reading dev token in interceptor: $e');
-        }
-        return handler.next(options);
-      },
+    _dio.interceptors.add(JwtInterceptor());
+    _dio.interceptors.add(LogInterceptor(
+      requestHeader: true,
+      requestBody: true,
+      responseHeader: false,
+      responseBody: true,
+      error: true,
     ));
   }
 
@@ -46,9 +61,11 @@ class AdminApiService {
   Future<List<AdminUserDto>> getUsers() async {
     try {
       final response = await _dio.get('users');
+      usersLoadedFromMock = false;
       final List list = response.data as List;
       return list.map((e) => AdminUserDto.fromJson(e)).toList();
     } catch (e) {
+      usersLoadedFromMock = true;
       debugPrint('AdminApiService.getUsers failed: $e. Using fallback mock data.');
       return _getMockUsers();
     }
@@ -61,6 +78,23 @@ class AdminApiService {
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('AdminApiService.toggleUserStatus failed: $e. Simulating locally.');
+      final list = _getMockUsers();
+      final index = list.indexWhere((u) => u.id == userId);
+      if (index != -1) {
+        final user = list[index];
+        list[index] = AdminUserDto(
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          provider: user.provider,
+          role: user.role,
+          status: user.status == 0 ? 1 : 0,
+          lastLoginAt: user.lastLoginAt,
+          createdAt: user.createdAt,
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+      }
       return true; // Mock success
     }
   }
@@ -69,9 +103,11 @@ class AdminApiService {
   Future<List<ApiSourceDto>> getApiSources() async {
     try {
       final response = await _dio.get('api-sources');
+      apiSourcesLoadedFromMock = false;
       final List list = response.data as List;
       return list.map((e) => ApiSourceDto.fromJson(e)).toList();
     } catch (e) {
+      apiSourcesLoadedFromMock = true;
       debugPrint('AdminApiService.getApiSources failed: $e. Using fallback mock data.');
       return _getMockApiSources();
     }
@@ -89,7 +125,7 @@ class AdminApiService {
       final index = list.indexWhere((element) => element.id == id);
       if (index != -1) {
         final src = list[index];
-        return ApiSourceDto(
+        final updated = ApiSourceDto(
           id: src.id,
           name: src.name,
           baseUrl: src.baseUrl,
@@ -102,6 +138,8 @@ class AdminApiService {
           createdAt: src.createdAt,
           updatedAt: DateTime.now().toIso8601String(),
         );
+        list[index] = updated;
+        return updated;
       }
       throw Exception('API Source not found');
     }
@@ -111,9 +149,11 @@ class AdminApiService {
   Future<List<ApiSyncJobDto>> getSyncJobs() async {
     try {
       final response = await _dio.get('sync-jobs');
+      syncJobsLoadedFromMock = false;
       final List list = response.data as List;
       return list.map((e) => ApiSyncJobDto.fromJson(e)).toList();
     } catch (e) {
+      syncJobsLoadedFromMock = true;
       debugPrint('AdminApiService.getSyncJobs failed: $e. Using fallback mock data.');
       return _getMockSyncJobs();
     }
@@ -123,9 +163,11 @@ class AdminApiService {
   Future<List<SystemSettingDto>> getSettings() async {
     try {
       final response = await _dio.get('settings');
+      settingsLoadedFromMock = false;
       final List list = response.data as List;
       return list.map((e) => SystemSettingDto.fromJson(e)).toList();
     } catch (e) {
+      settingsLoadedFromMock = true;
       debugPrint('AdminApiService.getSettings failed: $e. Using fallback mock data.');
       return _getMockSettings();
     }
@@ -139,6 +181,13 @@ class AdminApiService {
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       debugPrint('AdminApiService.updateSettings failed: $e. Simulating success locally.');
+      final list = _getMockSettings();
+      for (var s in settings) {
+        final index = list.indexWhere((item) => item.key == s.key);
+        if (index != -1) {
+          list[index] = s;
+        }
+      }
       return true; // Mock success
     }
   }
@@ -147,9 +196,11 @@ class AdminApiService {
   Future<List<AuditLogDto>> getLogs({int limit = 100}) async {
     try {
       final response = await _dio.get('logs', queryParameters: {'limit': limit});
+      logsLoadedFromMock = false;
       final List list = response.data as List;
       return list.map((e) => AuditLogDto.fromJson(e)).toList();
     } catch (e) {
+      logsLoadedFromMock = true;
       debugPrint('AdminApiService.getLogs failed: $e. Using fallback mock data.');
       return _getMockAuditLogs();
     }
@@ -158,11 +209,12 @@ class AdminApiService {
   // --- MOCK FALLBACK DATA GENERATORS ---
 
   List<AdminUserDto> _getMockUsers() {
-    return [
+    _cachedMockUsers ??= [
       AdminUserDto(
         id: '11111111-1111-1111-1111-111111111111',
         fullName: 'Dr. Alexander Vance',
         email: 'alexander.vance@university.edu',
+        provider: 0,
         role: 3, // Admin
         status: 0, // Active
         lastLoginAt: DateTime.now().subtract(const Duration(minutes: 5)).toIso8601String(),
@@ -173,6 +225,7 @@ class AdminApiService {
         id: '22222222-2222-2222-2222-222222222222',
         fullName: 'Prof. Helen Carter',
         email: 'helen.carter@science.org',
+        provider: 1,
         role: 0, // Researcher
         status: 0, // Active
         lastLoginAt: DateTime.now().subtract(const Duration(hours: 3)).toIso8601String(),
@@ -183,6 +236,7 @@ class AdminApiService {
         id: '33333333-3333-3333-3333-333333333333',
         fullName: 'John Doe',
         email: 'john.doe@student.edu',
+        provider: 0,
         role: 2, // Student
         status: 1, // Locked
         lastLoginAt: DateTime.now().subtract(const Duration(days: 4)).toIso8601String(),
@@ -193,6 +247,7 @@ class AdminApiService {
         id: '44444444-4444-4444-4444-444444444444',
         fullName: 'Sarah Jenkins',
         email: 'sarah.j@lecturer.edu',
+        provider: 0,
         role: 1, // Lecturer
         status: 2, // Pending
         lastLoginAt: null,
@@ -200,10 +255,11 @@ class AdminApiService {
         updatedAt: DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
       ),
     ];
+    return _cachedMockUsers!;
   }
 
   List<ApiSourceDto> _getMockApiSources() {
-    return [
+    _cachedMockApiSources ??= [
       ApiSourceDto(
         id: 'a1a1a1a1-a1a1-a1a1-a1a1-a1a1a1a1a1a1',
         name: 'OpenAlex',
@@ -244,10 +300,11 @@ class AdminApiService {
         updatedAt: DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
       ),
     ];
+    return _cachedMockApiSources!;
   }
 
   List<ApiSyncJobDto> _getMockSyncJobs() {
-    return [
+    _cachedMockSyncJobs ??= [
       ApiSyncJobDto(
         id: 'j1j1j1j1-j1j1-j1j1-j1j1-j1j1j1j1j1j1',
         sourceName: 'OpenAlex',
@@ -294,10 +351,11 @@ class AdminApiService {
         createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
       ),
     ];
+    return _cachedMockSyncJobs!;
   }
 
   List<SystemSettingDto> _getMockSettings() {
-    return [
+    _cachedMockSettings ??= [
       SystemSettingDto(
         key: 'max_search_results',
         value: '50',
@@ -327,10 +385,11 @@ class AdminApiService {
         updatedAt: DateTime.now().subtract(const Duration(days: 15)).toIso8601String(),
       ),
     ];
+    return _cachedMockSettings!;
   }
 
   List<AuditLogDto> _getMockAuditLogs() {
-    return [
+    _cachedMockAuditLogs ??= [
       AuditLogDto(
         id: 'l1l1l1l1-l1l1-l1l1-l1l1-l1l1l1l1l1l1',
         adminUserId: '11111111-1111-1111-1111-111111111111',
@@ -365,5 +424,6 @@ class AdminApiService {
         createdAt: DateTime.now().subtract(const Duration(days: 1, hours: 2)).toIso8601String(),
       ),
     ];
+    return _cachedMockAuditLogs!;
   }
 }

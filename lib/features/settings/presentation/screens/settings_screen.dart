@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../core/theme_manager.dart';
-import '../../admin/presentation/screens/admin_dashboard_screen.dart';
-import '../../user/profile/data/services/user_api_service.dart';
-import '../../user/profile/data/models/user_models.dart';
+import '../../../../core/theme_manager.dart';
+import '../../../admin/presentation/screens/admin_dashboard_screen.dart';
+import '../../../user/profile/data/services/user_api_service.dart';
+import '../../../user/profile/data/models/user_models.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

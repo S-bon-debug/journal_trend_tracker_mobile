@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../storage/token_storage.dart';
 
 class JwtInterceptor extends Interceptor {
@@ -16,7 +17,13 @@ class JwtInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final storage = await TokenStorage.instance;
-    final token = storage.getAccessToken();
+    
+    // Prioritize dev_jwt_token for testing
+    final prefs = await SharedPreferences.getInstance();
+    String? token = prefs.getString('dev_jwt_token');
+    if (token == null || token.isEmpty) {
+      token = storage.getAccessToken();
+    }
 
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
