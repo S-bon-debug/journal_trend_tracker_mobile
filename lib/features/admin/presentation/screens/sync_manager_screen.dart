@@ -16,6 +16,8 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
 
   bool _isLoading = true;
   String? _error;
+  bool _isTriggeringSync = false;
+  bool _isWipingData = false;
 
   List<ApiSourceDto> _sources = [];
   List<ApiSyncJobDto> _syncJobs = [];
@@ -105,6 +107,119 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     }
   }
 
+  Future<void> _triggerSync() async {
+    setState(() {
+      _isTriggeringSync = true;
+    });
+
+    try {
+      final success = await _apiService.triggerSync();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Đã kích hoạt đồng bộ dữ liệu! Job đang chạy nền.' : 'Kích hoạt đồng bộ thất bại.',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        if (success) await _loadSyncData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi kích hoạt đồng bộ: $e', style: GoogleFonts.inter()),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isTriggeringSync = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _wipeData() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2E),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            const SizedBox(width: 8),
+            Text('Xác nhận xóa dữ liệu', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'Hành động này sẽ XÓA TOÀN BỘ dữ liệu mock trong hệ thống và không thể khôi phục.\n\nBạn có chắc chắn muốn tiếp tục?',
+          style: GoogleFonts.inter(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Hủy', style: GoogleFonts.inter(color: Colors.white54)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Xóa tất cả', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isWipingData = true;
+    });
+
+    try {
+      final success = await _apiService.wipeMockData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Đã xóa toàn bộ dữ liệu mock thành công!' : 'Xóa dữ liệu thất bại.',
+              style: GoogleFonts.inter(),
+            ),
+            backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        if (success) await _loadSyncData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi xóa dữ liệu: $e', style: GoogleFonts.inter()),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isWipingData = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -133,10 +248,41 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           ],
         ),
         actions: [
+          // Nút Đồng bộ ngay
+          _isTriggeringSync
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.sync_rounded, color: Colors.greenAccent),
+                  tooltip: 'Đồng bộ ngay',
+                  onPressed: _triggerSync,
+                ),
+          // Nút Xóa dữ liệu mock
+          _isWipingData
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 12.0),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
+                  ),
+                )
+              : IconButton(
+                  icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+                  tooltip: 'Xóa dữ liệu mock',
+                  onPressed: _wipeData,
+                ),
+          // Nút Refresh
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadSyncData,
-          )
+          ),
         ],
       ),
       body: _isLoading
