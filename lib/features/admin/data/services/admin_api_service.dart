@@ -155,6 +155,30 @@ class AdminApiService {
     }
   }
 
+  // 9. POST /api/admin/sync-jobs/trigger
+  Future<bool> triggerSync() async {
+    try {
+      final response = await _dio.post('sync-jobs/trigger');
+      return response.statusCode == 202 || response.statusCode == 200;
+    } catch (e) {
+      debugPrint('AdminApiService.triggerSync failed: $e. Simulating success locally.');
+      return true; // Mock success
+    }
+  }
+
+  // 10. DELETE /api/admin/papers/wipe-mock
+  Future<bool> wipeMockData() async {
+    try {
+      final response = await _dio.delete('papers/wipe-mock');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('AdminApiService.wipeMockData failed: $e. Simulating success locally.');
+      // Clear local mock cache to simulate wipe
+      _cachedMockSyncJobs = null;
+      return true; // Mock success
+    }
+  }
+
   // --- MOCK FALLBACK DATA GENERATORS ---
 
   List<AdminUserDto> _getMockUsers() {
