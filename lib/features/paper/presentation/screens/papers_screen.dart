@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/paper_summary_dto.dart';
 import '../../data/models/paper_filter_dto.dart';
 import '../../data/services/paper_api_service.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../widgets/paper_card.dart';
 import 'paper_detail_screen.dart';
 
@@ -23,6 +24,8 @@ class _PapersScreenState extends State<PapersScreen> {
   int _currentPage = 1;
   String _currentKeyword = '';
   
+  int? _userRole;
+
   // Filters
   int? _selectedYear;
   String? _selectedSource;
@@ -39,6 +42,7 @@ class _PapersScreenState extends State<PapersScreen> {
   @override
   void initState() {
     super.initState();
+    _loadUserRole();
     _fetchPapers();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
@@ -46,6 +50,13 @@ class _PapersScreenState extends State<PapersScreen> {
           _fetchPapers(loadMore: true);
         }
       }
+    });
+  }
+
+  Future<void> _loadUserRole() async {
+    final storage = await TokenStorage.instance;
+    setState(() {
+      _userRole = storage.getUserRole();
     });
   }
 
@@ -112,31 +123,56 @@ class _PapersScreenState extends State<PapersScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đang kích hoạt tiến trình lấy bài báo...')),
-          );
-          try {
-            await _apiService.triggerSyncPapers();
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Thành công! Vui lòng chờ 1-2 phút để bài báo tải về.')),
-            );
-            
-            // Reload list
-            _fetchPapers(); 
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Lỗi: $e')),
-            );
-          }
-        },
-        icon: const Icon(Icons.sync),
-        label: const Text('Đồng bộ'),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+      floatingActionButton: _userRole == 3 
+          ? Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.extended(
+                  heroTag: 'refresh_btn',
+                  onPressed: () => _fetchPapers(loadMore: false),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tải lại trang'),
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.blue,
+                ),
+                const SizedBox(height: 16),
+                FloatingActionButton.extended(
+                  heroTag: 'sync_btn',
+                  onPressed: () async {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đang kích hoạt tiến trình lấy bài báo...')),
+                    );
+                    try {
+                      await _apiService.triggerSyncPapers();
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Thành công! Vui lòng chờ 1-2 phút để bài báo tải về.')),
+                      );
+                      
+                      // Reload list
+                      _fetchPapers(); 
+                    } catch (e) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Lỗi: $e')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.sync),
+                  label: const Text('Đồng bộ'),
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                ),
+              ],
+            )
+          : FloatingActionButton.extended(
+              heroTag: 'refresh_btn',
+              onPressed: () => _fetchPapers(loadMore: false),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Tải lại trang'),
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+            ),
     );
   }
 

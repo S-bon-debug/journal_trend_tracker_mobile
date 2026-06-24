@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../core/storage/token_storage.dart';
 import '../models/paged_result_dto.dart';
 import '../models/paper_summary_dto.dart';
 import '../models/paper_detail_dto.dart';
@@ -60,10 +61,14 @@ class PaperApiService {
   Future<void> triggerSyncPapers() async {
     final uri = Uri.parse('https://api-gateway-999k.onrender.com/api/admin/sync-jobs/trigger');
     try {
+      final storage = await TokenStorage.instance;
+      final token = storage.getAccessToken();
+
       final response = await http.post(
         uri,
         headers: {
           'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
         },
       );
       if (response.statusCode == 202 || response.statusCode == 200) {
