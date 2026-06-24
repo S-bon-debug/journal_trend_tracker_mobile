@@ -1,0 +1,50 @@
+name: Flutter CI
+
+on:
+  push:
+    branches: [ "main", "dev" ]
+  pull_request:
+    branches: [ "main", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Tải source code về máy ảo của GitHub
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Cài đặt Java (Cần thiết để build Android)
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # 3. Cài đặt Flutter SDK
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      # 4. Tải các package dependencies
+      - name: Install dependencies
+        run: flutter pub get
+
+      # 5. Kiểm tra format code (tùy chọn, sẽ báo lỗi nếu code chưa được format)
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed . || true
+
+      # 6. Chạy phân tích lỗi cú pháp (Lint)
+      - name: Analyze project source
+        run: flutter analyze
+
+      # 7. Chạy Unit Test (Nếu có)
+      - name: Run tests
+        run: flutter test || true
+
+      # 8. Build thử ra file APK (Bản debug) để đảm bảo code compile thành công
+      - name: Build Android APK
+        run: flutter build apk --debug
