@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../storage/token_storage.dart';
 
 class JwtInterceptor extends Interceptor {
   final Dio _refreshDio;
 
   JwtInterceptor({Dio? refreshDio}) : _refreshDio = refreshDio ?? Dio() {
-    _refreshDio.options.baseUrl = 'http://10.0.2.2:5000/api/';
+    _refreshDio.options.baseUrl = 'https://journal-trend-tracker-backend.onrender.com/api/';
     _refreshDio.options.connectTimeout = const Duration(seconds: 10);
     _refreshDio.options.receiveTimeout = const Duration(seconds: 10);
   }
@@ -17,13 +16,7 @@ class JwtInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     final storage = await TokenStorage.instance;
-    
-    // Prioritize dev_jwt_token for testing
-    final prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('dev_jwt_token');
-    if (token == null || token.isEmpty) {
-      token = storage.getAccessToken();
-    }
+    final token = storage.getAccessToken();
 
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -68,7 +61,7 @@ class JwtInterceptor extends Interceptor {
 
       try {
         final response = await _refreshDio.post(
-          'http://10.0.2.2:5000/identity-api/api/identity/refresh',
+          'https://journal-trend-tracker-backend.onrender.com/api/identity/refresh',
           data: {
             'accessToken': accessToken,
             'refreshToken': refreshToken,
