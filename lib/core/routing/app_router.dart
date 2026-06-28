@@ -3,15 +3,15 @@ import 'package:go_router/go_router.dart';
 import '../storage/token_storage.dart';
 
 // Screens
-import '../../userservice/trends/presentation/screens/trends_dashboard_screen.dart';
-import '../../userservice/trends/presentation/screens/export_report_screen.dart';
-import '../../userservice/papers/presentation/screens/papers_screen.dart';
-import '../../userservice/papers/presentation/screens/paper_detail_screen.dart';
-import '../../userservice/notifications/presentation/screens/notifications_screen.dart';
-import '../../userservice/profile/presentation/screens/profile_screen.dart';
-import '../../userservice/auth/presentation/screens/splash_screen.dart';
-import '../../userservice/auth/presentation/screens/login_screen.dart';
-import '../../userservice/auth/presentation/screens/register_screen.dart';
+import '../../features/trend/presentation/screens/trends_dashboard_screen.dart';
+import '../../features/trend/presentation/screens/export_report_screen.dart';
+import '../../features/paper/presentation/screens/papers_screen.dart';
+import '../../features/paper/presentation/screens/paper_detail_screen.dart';
+import '../../features/user/notifications/presentation/screens/notifications_screen.dart';
+import '../../features/user/profile/presentation/screens/profile_screen.dart';
+import '../../features/user/auth/presentation/screens/splash_screen.dart';
+import '../../features/user/auth/presentation/screens/login_screen.dart';
+import '../../features/user/auth/presentation/screens/register_screen.dart';
 
 class AuthNotifier extends ChangeNotifier {
   static final AuthNotifier instance = AuthNotifier._();
