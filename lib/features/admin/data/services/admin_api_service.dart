@@ -30,7 +30,7 @@ class AdminApiService {
 
   static String get baseUrl {
     // YARP Gateway route for admin service
-    return 'https://api-gateway-999k.onrender.com/api/admin/';
+    return 'http://10.0.2.2:5000/api/admin/';
   }
 
   AdminApiService({Dio? dio}) : _dio = dio ?? Dio() {

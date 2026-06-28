@@ -11,7 +11,7 @@ class PaperApiService {
   // Otherwise (iOS simulator, Web, Desktop), use localhost.
   static String get baseUrl {
     // Deployed Backend (Render API Gateway)
-    return 'https://api-gateway-999k.onrender.com/api';
+    return 'http://10.0.2.2:5000/api';
 
     // Local Backend (Direct Service)
     // if (!kIsWeb && Platform.isAndroid) {
@@ -59,7 +59,7 @@ class PaperApiService {
     }
   }
   Future<void> triggerSyncPapers() async {
-    final uri = Uri.parse('https://api-gateway-999k.onrender.com/api/admin/sync-jobs/trigger');
+    final uri = Uri.parse('http://10.0.2.2:5000/api/admin/sync-jobs/trigger');
     try {
       final storage = await TokenStorage.instance;
       final token = storage.getAccessToken();

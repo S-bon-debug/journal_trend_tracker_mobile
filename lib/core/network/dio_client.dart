@@ -8,7 +8,7 @@ class DioClient {
   DioClient._() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'https://api-gateway-999k.onrender.com/api/',
+        baseUrl: 'http://10.0.2.2:5000/api/',
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
       ),
