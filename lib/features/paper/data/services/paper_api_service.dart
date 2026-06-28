@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../../core/network/api_config.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../models/paged_result_dto.dart';
 import '../models/paper_summary_dto.dart';
@@ -9,16 +10,7 @@ import '../models/paper_filter_dto.dart';
 class PaperApiService {
   // If running on Android emulator, use 10.0.2.2 to access host localhost.
   // Otherwise (iOS simulator, Web, Desktop), use localhost.
-  static String get baseUrl {
-    // Deployed Backend (Render API Gateway)
-    return 'http://10.0.2.2:5000/api';
-
-    // Local Backend (Direct Service)
-    // if (!kIsWeb && Platform.isAndroid) {
-    //   return 'http://10.0.2.2:5145/api';
-    // }
-    // return 'http://localhost:5145/api';
-  }
+  static String get baseUrl => '${ApiConfig.paperUrl}/api';
 
   Future<PagedResultDto<PaperSummaryDto>> searchPapers(PaperFilterDto filter) async {
     final uri = Uri.parse('$baseUrl/papers').replace(queryParameters: filter.toQueryParameters());
@@ -59,7 +51,7 @@ class PaperApiService {
     }
   }
   Future<void> triggerSyncPapers() async {
-    final uri = Uri.parse('http://10.0.2.2:5000/api/admin/sync-jobs/trigger');
+    final uri = Uri.parse('${ApiConfig.adminUrl}/api/admin/sync-jobs/trigger');
     try {
       final storage = await TokenStorage.instance;
       final token = storage.getAccessToken();

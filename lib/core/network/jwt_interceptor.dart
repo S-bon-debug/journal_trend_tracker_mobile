@@ -1,11 +1,12 @@
 import 'package:dio/dio.dart';
+import 'api_config.dart';
 import '../storage/token_storage.dart';
 
 class JwtInterceptor extends Interceptor {
   final Dio _refreshDio;
 
   JwtInterceptor({Dio? refreshDio}) : _refreshDio = refreshDio ?? Dio() {
-    _refreshDio.options.baseUrl = 'https://journal-trend-tracker-backend.onrender.com/api/';
+    _refreshDio.options.baseUrl = '${ApiConfig.identityUrl}/api/';
     _refreshDio.options.connectTimeout = const Duration(seconds: 10);
     _refreshDio.options.receiveTimeout = const Duration(seconds: 10);
   }
@@ -61,7 +62,7 @@ class JwtInterceptor extends Interceptor {
 
       try {
         final response = await _refreshDio.post(
-          'https://journal-trend-tracker-backend.onrender.com/api/identity/refresh',
+          'identity/refresh',
           data: {
             'accessToken': accessToken,
             'refreshToken': refreshToken,

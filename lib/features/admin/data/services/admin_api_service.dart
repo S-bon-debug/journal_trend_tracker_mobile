@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/network/api_config.dart';
 import '../../../../core/network/jwt_interceptor.dart';
 import '../models/admin_models.dart';
 
@@ -30,7 +31,7 @@ class AdminApiService {
 
   static String get baseUrl {
     // YARP Gateway route for admin service
-    return 'http://10.0.2.2:5000/api/admin/';
+    return '${ApiConfig.adminUrl}/api/admin/';
   }
 
   AdminApiService({Dio? dio}) : _dio = dio ?? Dio() {

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'api_config.dart';
 import 'jwt_interceptor.dart';
 
 class DioClient {
@@ -8,7 +9,7 @@ class DioClient {
   DioClient._() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'http://10.0.2.2:5000/api/',
+        baseUrl: '${ApiConfig.identityUrl}/api/',
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
       ),

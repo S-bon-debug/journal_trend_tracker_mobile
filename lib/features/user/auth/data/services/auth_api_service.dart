@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import '../../../../../core/network/api_config.dart';
 import '../../../../../core/network/dio_client.dart';
 import '../../../../../core/storage/token_storage.dart';
 import '../../../../../core/routing/app_router.dart';
@@ -15,7 +16,7 @@ class AuthApiService {
   }) async {
     try {
       final response = await _dio.post(
-        'https://journal-trend-tracker-backend.onrender.com/api/identity/register',
+        '${ApiConfig.identityUrl}/api/identity/register',
         data: {
           'email': email,
           'password': password,
@@ -54,7 +55,7 @@ class AuthApiService {
   }) async {
     try {
       final response = await _dio.post(
-        'https://journal-trend-tracker-backend.onrender.com/api/identity/login',
+        '${ApiConfig.identityUrl}/api/identity/login',
         data: {
           'email': email,
           'password': password,
@@ -91,7 +92,7 @@ class AuthApiService {
       final storage = await TokenStorage.instance;
       final token = storage.getAccessToken();
       if (token != null && token.isNotEmpty) {
-        await _dio.post('https://journal-trend-tracker-backend.onrender.com/api/identity/logout');
+        await _dio.post('${ApiConfig.identityUrl}/api/identity/logout');
       }
     } catch (_) {
       // Ignore network errors on logout, proceed with local logout
@@ -105,7 +106,7 @@ class AuthApiService {
   Future<AuthResponse> handleGoogleCallback(String code) async {
     try {
       final response = await _dio.get(
-        'https://journal-trend-tracker-backend.onrender.com/api/identity/auth/google/callback',
+        '${ApiConfig.identityUrl}/api/identity/auth/google/callback',
         queryParameters: {'code': code},
       );
 
