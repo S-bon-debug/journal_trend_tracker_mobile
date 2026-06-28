@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'bookmarks_screen.dart';
 import '../../data/services/user_api_service.dart';
-import '../../data/models/user_models.dart';
+
 import '../../../auth/data/services/auth_api_service.dart';
 import '../../../../settings/presentation/screens/settings_screen.dart';
 
@@ -223,7 +223,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Đăng xuất', style: const TextStyle(color: Colors.redAccent)),
+                        child: const Text('Đăng xuất', style: TextStyle(color: Colors.redAccent)),
                       ),
                     ],
                   ),
