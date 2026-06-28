@@ -6,7 +6,7 @@ class JwtInterceptor extends Interceptor {
   final Dio _refreshDio;
 
   JwtInterceptor({Dio? refreshDio}) : _refreshDio = refreshDio ?? Dio() {
-    _refreshDio.options.baseUrl = 'https://api-gateway-999k.onrender.com/api/';
+    _refreshDio.options.baseUrl = 'http://10.0.2.2:5000/api/';
     _refreshDio.options.connectTimeout = const Duration(seconds: 10);
     _refreshDio.options.receiveTimeout = const Duration(seconds: 10);
   }
@@ -68,7 +68,7 @@ class JwtInterceptor extends Interceptor {
 
       try {
         final response = await _refreshDio.post(
-          'https://api-gateway-999k.onrender.com/identity-api/api/identity/refresh',
+          'http://10.0.2.2:5000/identity-api/api/identity/refresh',
           data: {
             'accessToken': accessToken,
             'refreshToken': refreshToken,

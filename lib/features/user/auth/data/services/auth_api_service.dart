@@ -15,7 +15,7 @@ class AuthApiService {
   }) async {
     try {
       final response = await _dio.post(
-        'https://api-gateway-999k.onrender.com/identity-api/api/identity/register',
+        'http://10.0.2.2:5000/identity-api/api/identity/register',
         data: {
           'email': email,
           'password': password,
@@ -54,7 +54,7 @@ class AuthApiService {
   }) async {
     try {
       final response = await _dio.post(
-        'https://api-gateway-999k.onrender.com/identity-api/api/identity/login',
+        'http://10.0.2.2:5000/identity-api/api/identity/login',
         data: {
           'email': email,
           'password': password,
@@ -91,7 +91,7 @@ class AuthApiService {
       final storage = await TokenStorage.instance;
       final token = storage.getAccessToken();
       if (token != null && token.isNotEmpty) {
-        await _dio.post('https://api-gateway-999k.onrender.com/identity-api/api/identity/logout');
+        await _dio.post('http://10.0.2.2:5000/identity-api/api/identity/logout');
       }
     } catch (_) {
       // Ignore network errors on logout, proceed with local logout
@@ -105,7 +105,7 @@ class AuthApiService {
   Future<AuthResponse> handleGoogleCallback(String code) async {
     try {
       final response = await _dio.get(
-        'https://api-gateway-999k.onrender.com/identity-api/api/identity/auth/google/callback',
+        'http://10.0.2.2:5000/identity-api/api/identity/auth/google/callback',
         queryParameters: {'code': code},
       );
 
