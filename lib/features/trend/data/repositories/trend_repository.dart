@@ -3,7 +3,7 @@ import '../models/trend_models.dart';
 
 class TrendRepository {
   final Dio dio;
-  final String baseUrl = 'https://api-gateway-999k.onrender.com/trend-api/api/trends';
+  final String baseUrl = 'https://journal-trend-tracker-backend-vyt9.onrender.com/api/trends';
 
   TrendRepository({required this.dio});
 
