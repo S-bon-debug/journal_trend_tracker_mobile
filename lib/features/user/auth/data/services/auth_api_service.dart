@@ -43,7 +43,7 @@ class AuthApiService {
 
       return authResponse;
     } on DioException catch (e) {
-      final message = e.response?.data?['message'] ?? e.message ?? 'Registration failed';
+      final message = _getErrorMessage(e, 'Registration failed');
       throw Exception(message);
     }
   }
@@ -81,7 +81,7 @@ class AuthApiService {
 
       return authResponse;
     } on DioException catch (e) {
-      final message = e.response?.data?['message'] ?? e.message ?? 'Login failed';
+      final message = _getErrorMessage(e, 'Login failed');
       throw Exception(message);
     }
   }
@@ -151,8 +151,20 @@ class AuthApiService {
         return mockResponse;
       }
 
-      final message = e.response?.data?['message'] ?? e.message ?? 'Google Login failed';
+      final message = _getErrorMessage(e, 'Google Login failed');
       throw Exception(message);
     }
+  }
+
+  String _getErrorMessage(DioException e, String defaultMessage) {
+    final responseData = e.response?.data;
+    if (responseData == null) return e.message ?? defaultMessage;
+    if (responseData is Map) {
+      return responseData['message']?.toString() ?? responseData['error']?.toString() ?? e.message ?? defaultMessage;
+    }
+    if (responseData is String) {
+      return responseData;
+    }
+    return e.message ?? defaultMessage;
   }
 }
