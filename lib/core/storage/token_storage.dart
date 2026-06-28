@@ -58,7 +58,13 @@ class TokenStorage {
   }
 
   int? getUserRole() {
-    return _prefs.getInt(_userRoleKey);
+    try {
+      return _prefs.getInt(_userRoleKey);
+    } catch (_) {
+      // Handle stale data: if role was previously stored as String, clear it
+      _prefs.remove(_userRoleKey);
+      return null;
+    }
   }
 
   Future<void> saveUserEmail(String email) async {
