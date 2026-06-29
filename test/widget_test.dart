@@ -7,8 +7,8 @@ void main() {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that bottom navigation bar is present
-    expect(find.byType(BottomNavigationBar), findsOneWidget);
+    // Verify that bottom navigation bar is present (NavigationBar is the new widget)
+    expect(find.byType(NavigationBar), findsOneWidget);
 
     // Verify that the trends tab is initially selected and displaying the title
     expect(find.text('Trends Dashboard'), findsOneWidget);
@@ -21,3 +21,4 @@ void main() {
     expect(find.text('My Profile'), findsOneWidget);
   });
 }
+
