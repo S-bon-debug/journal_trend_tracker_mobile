@@ -58,10 +58,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  void _markAsRead(NotificationDto item) {
+  void _markAsRead(NotificationDto item) async {
     setState(() {
       _locallyReadIds.add(item.id);
     });
+
+    try {
+      await _apiService.markNotificationAsRead(item.id);
+    } catch (e) {
+      debugPrint('Failed to mark notification as read: $e');
+    }
 
     // Show details dialog
     showModalBottomSheet(
@@ -123,20 +129,28 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void _markAllAsRead() {
+  void _markAllAsRead() async {
     setState(() {
       for (var item in _notifications) {
         _locallyReadIds.add(item.id);
       }
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('All notifications marked as read', style: GoogleFonts.inter()),
-        backgroundColor: Colors.purpleAccent,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    try {
+      await _apiService.markAllNotificationsAsRead();
+    } catch (e) {
+      debugPrint('Failed to mark all notifications as read: $e');
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('All notifications marked as read', style: GoogleFonts.inter()),
+          backgroundColor: Colors.purpleAccent,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _getIconForType(String type) {
