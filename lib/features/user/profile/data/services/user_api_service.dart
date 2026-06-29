@@ -76,4 +76,120 @@ class UserApiService {
       throw Exception('Failed to load identity account: ${e.message}');
     }
   }
+
+  // 6. PUT /api/users/profile
+  Future<void> updateProfile({
+    String? fullName,
+    String? email,
+    String? bio,
+    String? institution,
+    List<String>? researchFields,
+    String? websiteUrl,
+  }) async {
+    try {
+      final payload = {
+        'fullName': fullName,
+        'email': email,
+        'bio': bio,
+        'institution': institution,
+        'researchFields': researchFields,
+        'websiteUrl': websiteUrl,
+      };
+      await _dio.put(
+        '${ApiConfig.userUrl}/api/users/profile',
+        data: payload,
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to update user profile: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 7. POST /api/users/bookmarks
+  Future<void> addBookmark({
+    required String entityType,
+    required String entityId,
+    required String entityTitle,
+    String? note,
+  }) async {
+    try {
+      final payload = {
+        'entityType': entityType,
+        'entityId': entityId,
+        'entityTitle': entityTitle,
+        'note': note,
+      };
+      await _dio.post(
+        '${ApiConfig.userUrl}/api/users/bookmarks',
+        data: payload,
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to add bookmark: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 8. DELETE /api/users/bookmarks/{id}
+  Future<void> deleteBookmark(String bookmarkId) async {
+    try {
+      await _dio.delete(
+        '${ApiConfig.userUrl}/api/users/bookmarks/$bookmarkId',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to delete bookmark: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 9. POST /api/users/follows/keywords/{keywordId}
+  Future<void> followKeyword(String keywordId) async {
+    try {
+      await _dio.post(
+        '${ApiConfig.userUrl}/api/users/follows/keywords/$keywordId',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to follow keyword: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 10. POST /api/users/follows/journals/{journalId}
+  Future<void> followJournal(String journalId) async {
+    try {
+      await _dio.post(
+        '${ApiConfig.userUrl}/api/users/follows/journals/$journalId',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to follow journal: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 11. DELETE /api/users/follows/{id}
+  Future<void> unfollow(String followId) async {
+    try {
+      await _dio.delete(
+        '${ApiConfig.userUrl}/api/users/follows/$followId',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to unfollow: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 12. PUT /api/users/notifications/{id}/read
+  Future<void> markNotificationAsRead(String notificationId) async {
+    try {
+      await _dio.put(
+        '${ApiConfig.userUrl}/api/users/notifications/$notificationId/read',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to mark notification as read: ${e.response?.data ?? e.message}');
+    }
+  }
+
+  // 13. PUT /api/users/notifications/read-all
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      await _dio.put(
+        '${ApiConfig.userUrl}/api/users/notifications/read-all',
+      );
+    } on DioException catch (e) {
+      throw Exception('Failed to mark all notifications as read: ${e.response?.data ?? e.message}');
+    }
+  }
 }

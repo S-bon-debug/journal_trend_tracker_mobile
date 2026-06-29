@@ -142,24 +142,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _isSaving = true;
     });
 
-    // Simulate API call to update profile
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      await _apiService.updateProfile(
+        fullName: _nameController.text,
+        email: null,
+        bio: _bioController.text,
+        institution: _institutionController.text,
+        researchFields: _interests,
+        websiteUrl: _websiteController.text,
+      );
 
-    if (!mounted) return;
-    setState(() {
-      _name = _nameController.text;
-      _bio = _bioController.text;
-      _institution = _institutionController.text;
-      _websiteUrl = _websiteController.text;
-      _isEditing = false;
-      _isSaving = false;
-    });
+      if (!mounted) return;
+      setState(() {
+        _name = _nameController.text;
+        _bio = _bioController.text;
+        _institution = _institutionController.text;
+        _websiteUrl = _websiteController.text;
+        _isEditing = false;
+        _isSaving = false;
+      });
 
-    if (mounted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Profile updated successfully!', style: GoogleFonts.inter()),
+            backgroundColor: Colors.purpleAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSaving = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Profile updated successfully!', style: GoogleFonts.inter()),
-          backgroundColor: Colors.purpleAccent,
+          content: Text('Failed to update profile: $e', style: GoogleFonts.inter()),
+          backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
       );
