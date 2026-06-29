@@ -36,8 +36,8 @@ class AdminApiService {
 
   AdminApiService({Dio? dio}) : _dio = dio ?? Dio() {
     _dio.options.baseUrl = baseUrl;
-    _dio.options.connectTimeout = const Duration(seconds: 15);
-    _dio.options.receiveTimeout = const Duration(seconds: 15);
+    _dio.options.connectTimeout = const Duration(seconds: 90);
+    _dio.options.receiveTimeout = const Duration(seconds: 90);
     _dio.options.headers = {
       'X-Admin-User-Id': '11111111-1111-1111-1111-111111111111',
       'Accept': 'application/json',

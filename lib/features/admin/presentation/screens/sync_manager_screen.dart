@@ -92,7 +92,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi bật/tắt nguồn đồng bộ: $e', style: GoogleFonts.inter()),
+            content: Text('Error toggling sync source: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -118,7 +118,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Đã kích hoạt đồng bộ dữ liệu! Job đang chạy nền.' : 'Kích hoạt đồng bộ thất bại.',
+              success ? 'Sync successfully triggered! Job is running in background.' : 'Failed to trigger sync.',
               style: GoogleFonts.inter(),
             ),
             backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
@@ -131,7 +131,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi kích hoạt đồng bộ: $e', style: GoogleFonts.inter()),
+            content: Text('Error triggering sync: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -192,7 +192,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Đã xóa toàn bộ dữ liệu mock thành công!' : 'Xóa dữ liệu thất bại.',
+              success ? 'All mock data wiped successfully!' : 'Failed to wipe data.',
               style: GoogleFonts.inter(),
             ),
             backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
@@ -205,7 +205,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi xóa dữ liệu: $e', style: GoogleFonts.inter()),
+            content: Text('Error wiping data: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -296,14 +296,14 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
                       children: [
                         const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
                         const SizedBox(height: 16),
-                        Text('Lỗi tải cấu hình đồng bộ', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                        Text('Error loading sync configuration', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                         const SizedBox(height: 8),
                         Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54)),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _loadSyncData,
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Thử lại'),
+                          child: const Text('Retry'),
                         )
                       ],
                     ),

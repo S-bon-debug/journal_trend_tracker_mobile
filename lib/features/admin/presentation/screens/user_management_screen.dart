@@ -106,10 +106,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           });
 
           if (mounted) {
-            final nextStatusString = nextStatus == 0 ? 'Mở khóa' : 'Khóa';
+            final nextStatusString = nextStatus == 0 ? 'Unlocked' : 'Locked';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('$nextStatusString tài khoản ${currentUser.fullName} thành công!', style: GoogleFonts.inter()),
+                content: Text('Successfully $nextStatusString account ${currentUser.fullName}!', style: GoogleFonts.inter()),
                 backgroundColor: nextStatus == 0 ? Colors.greenAccent : Colors.redAccent,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -121,7 +121,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi thay đổi trạng thái: $e', style: GoogleFonts.inter()),
+            content: Text('Error changing status: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -173,14 +173,14 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                       children: [
                         const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
                         const SizedBox(height: 16),
-                        Text('Lỗi tải danh sách người dùng', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                        Text('Error loading user list', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                         const SizedBox(height: 8),
                         Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: subtitleColor)),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _loadUsers,
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Thử lại'),
+                          child: const Text('Retry'),
                         )
                       ],
                     ),

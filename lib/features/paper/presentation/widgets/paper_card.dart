@@ -24,13 +24,22 @@ class PaperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final avatarColor = _getRandomColor(paper.title);
-    
+    final cardBg = isDark ? const Color(0xFF16161E) : Colors.white;
+    final titleColor = isDark ? Colors.white : const Color(0xFF212529);
+    final subtitleColor = isDark ? Colors.white54 : const Color(0xFF868E96);
+    final labelBg = isDark ? Colors.white.withOpacity(0.05) : Colors.grey[100];
+    final labelColor = isDark ? Colors.white70 : const Color(0xFF495057);
+    final yearColor = isDark ? Colors.white54 : const Color(0xFF868E96);
+    final calendarIconColor = isDark ? Colors.white30 : const Color(0xFFADB5BD);
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardBg,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.transparent),
+        boxShadow: isDark ? [] : [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
@@ -81,11 +90,11 @@ class PaperCard extends StatelessWidget {
                     children: [
                       Text(
                         paper.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           height: 1.4,
-                          color: Color(0xFF212529),
+                          color: titleColor,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -95,7 +104,7 @@ class PaperCard extends StatelessWidget {
                       if (paper.authors.isNotEmpty) ...[
                         Text(
                           paper.authors.join(', '),
-                          style: const TextStyle(color: Color(0xFF868E96), fontSize: 13),
+                          style: TextStyle(color: subtitleColor, fontSize: 13),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -106,12 +115,12 @@ class PaperCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.grey[100],
+                            color: labelBg,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
                             paper.journalName!,
-                            style: const TextStyle(color: Color(0xFF495057), fontSize: 12, fontWeight: FontWeight.w500),
+                            style: TextStyle(color: labelColor, fontSize: 12, fontWeight: FontWeight.w500),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -128,11 +137,11 @@ class PaperCard extends StatelessWidget {
                           if (paper.publicationYear != null)
                             Row(
                               children: [
-                                const Icon(Icons.calendar_month, size: 14, color: Color(0xFFADB5BD)),
+                                Icon(Icons.calendar_month, size: 14, color: calendarIconColor),
                                 const SizedBox(width: 4),
                                 Text(
                                   paper.publicationYear.toString(),
-                                  style: const TextStyle(color: Color(0xFF868E96), fontWeight: FontWeight.w600, fontSize: 13),
+                                  style: TextStyle(color: yearColor, fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
                               ],
                             )

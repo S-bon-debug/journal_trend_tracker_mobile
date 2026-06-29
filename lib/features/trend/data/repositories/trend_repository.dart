@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
+import '../../../../core/network/api_config.dart';
 import '../models/trend_models.dart';
 
 class TrendRepository {
   final Dio dio;
 
-  final String baseUrl = 'https://journal-trend-tracker-backend-vyt9.onrender.com/api/trends';
+  final String baseUrl = '${ApiConfig.trendUrl}/api/trends';
   
   TrendRepository({required this.dio});
 

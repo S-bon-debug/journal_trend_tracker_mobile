@@ -113,7 +113,7 @@ class _PapersScreenState extends State<PapersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -132,7 +132,7 @@ class _PapersScreenState extends State<PapersScreen> {
                   heroTag: 'refresh_btn',
                   onPressed: () => _fetchPapers(loadMore: false),
                   icon: const Icon(Icons.refresh),
-                  label: const Text('Tải lại trang'),
+                  label: const Text('Refresh'),
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.blue,
                 ),
@@ -141,25 +141,25 @@ class _PapersScreenState extends State<PapersScreen> {
                   heroTag: 'sync_btn',
                   onPressed: () async {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đang kích hoạt tiến trình lấy bài báo...')),
+                      const SnackBar(content: Text('Triggering paper sync process...')),
                     );
                     try {
                       await _apiService.triggerSyncPapers();
                       
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Thành công! Vui lòng chờ 1-2 phút để bài báo tải về.')),
+                        const SnackBar(content: Text('Success! Please wait 1-2 minutes for papers to download.')),
                       );
                       
                       // Reload list
                       _fetchPapers(); 
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Lỗi: $e')),
+                        SnackBar(content: Text('Error: $e')),
                       );
                     }
                   },
                   icon: const Icon(Icons.sync),
-                  label: const Text('Đồng bộ'),
+                  label: const Text('Sync'),
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                 ),
@@ -169,7 +169,7 @@ class _PapersScreenState extends State<PapersScreen> {
               heroTag: 'refresh_btn',
               onPressed: () => _fetchPapers(loadMore: false),
               icon: const Icon(Icons.refresh),
-              label: const Text('Tải lại trang'),
+              label: const Text('Refresh'),
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
             ),
@@ -177,9 +177,14 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildHeader() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final headerBg = isDark ? const Color(0xFF16161E) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF1A1D1E);
+    final searchBg = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F3F5);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-      color: Colors.white,
+      color: headerBg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -199,44 +204,44 @@ class _PapersScreenState extends State<PapersScreen> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Latest Papers',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFF1A1D1E),
+                      color: textColor,
                     ),
                   ),
                 ],
               ),
               CircleAvatar(
-                backgroundColor: Colors.blue[50],
+                backgroundColor: isDark ? Colors.white.withOpacity(0.08) : Colors.blue[50],
                 radius: 24,
-                child: Icon(Icons.person, color: Colors.blue[700]),
+                child: Icon(Icons.person, color: isDark ? Colors.white70 : Colors.blue[700]),
               ),
             ],
           ),
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFF1F3F5),
+              color: searchBg,
               borderRadius: BorderRadius.circular(16),
             ),
             child: TextField(
               controller: _searchController,
               textInputAction: TextInputAction.search,
-              style: const TextStyle(
-                color: Color(0xFF1A1D1E),
+              style: TextStyle(
+                color: textColor,
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
               ),
               decoration: InputDecoration(
                 hintText: 'Search by title, author, keyword...',
-                hintStyle: const TextStyle(color: Color(0xFFADB5BD)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF868E96)),
+                hintStyle: TextStyle(color: isDark ? Colors.white30 : const Color(0xFFADB5BD)),
+                prefixIcon: Icon(Icons.search, color: isDark ? Colors.white30 : const Color(0xFF868E96)),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Color(0xFF868E96)),
+                        icon: Icon(Icons.clear, color: isDark ? Colors.white30 : const Color(0xFF868E96)),
                         onPressed: () {
                           _searchController.clear();
                           _onSearch('');
@@ -245,6 +250,7 @@ class _PapersScreenState extends State<PapersScreen> {
                     : null,
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                filled: false,
               ),
               onChanged: (value) => setState(() {}),
               onSubmitted: _onSearch,
@@ -256,8 +262,13 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildFilters() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final filterBg = isDark ? const Color(0xFF16161E) : Colors.white;
+    final chipBg = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F3F5);
+    final unselectedTextColor = isDark ? Colors.white70 : const Color(0xFF495057);
+
     return Container(
-      color: Colors.white,
+      color: filterBg,
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,10 +293,10 @@ class _PapersScreenState extends State<PapersScreen> {
                       _fetchPapers();
                     });
                   },
-                  backgroundColor: const Color(0xFFF1F3F5),
+                  backgroundColor: chipBg,
                   selectedColor: Colors.blue[700],
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF495057),
+                    color: isSelected ? Colors.white : unselectedTextColor,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                   shape: RoundedRectangleBorder(
@@ -318,15 +329,15 @@ class _PapersScreenState extends State<PapersScreen> {
                       _fetchPapers();
                     });
                   },
-                  backgroundColor: const Color(0xFFF1F3F5),
-                  selectedColor: const Color(0xFF343A40),
+                  backgroundColor: chipBg,
+                  selectedColor: isDark ? Colors.purpleAccent : const Color(0xFF343A40),
                   labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : const Color(0xFF495057),
+                    color: isSelected ? Colors.white : unselectedTextColor,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
-                    side: BorderSide(color: isSelected ? const Color(0xFF343A40) : Colors.transparent),
+                    side: BorderSide(color: isSelected ? (isDark ? Colors.purpleAccent : const Color(0xFF343A40)) : Colors.transparent),
                   ),
                   showCheckmark: false,
                 );

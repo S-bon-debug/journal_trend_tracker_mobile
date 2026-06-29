@@ -7,8 +7,8 @@ class JwtInterceptor extends Interceptor {
 
   JwtInterceptor({Dio? refreshDio}) : _refreshDio = refreshDio ?? Dio() {
     _refreshDio.options.baseUrl = '${ApiConfig.identityUrl}/api/';
-    _refreshDio.options.connectTimeout = const Duration(seconds: 10);
-    _refreshDio.options.receiveTimeout = const Duration(seconds: 10);
+    _refreshDio.options.connectTimeout = const Duration(seconds: 60);
+    _refreshDio.options.receiveTimeout = const Duration(seconds: 60);
   }
 
   bool _isRefreshing = false;

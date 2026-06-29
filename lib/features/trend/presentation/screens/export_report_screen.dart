@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
 import '../../data/repositories/trend_repository.dart';
 
@@ -23,7 +24,7 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = TrendRepository(dio: Dio());
+    _repository = TrendRepository(dio: DioClient.dio);
     _loadKeywords();
   }
 
@@ -50,13 +51,13 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tải báo cáo thành công! Đã lưu tại: $savePath')),
+          SnackBar(content: Text('Report downloaded successfully! Saved at: $savePath')),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi tải báo cáo: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Error downloading report: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -70,12 +71,17 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Export Report', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        title: Text('Export Report', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -98,19 +104,25 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87),
     );
   }
 
   Widget _buildKeywordDropdown() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dropdownBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final hintColor = isDark ? Colors.white54 : Colors.black54;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08)),
       ),
       child: FutureBuilder<List<TopKeywordDto>>(
         future: _keywordsFuture,
@@ -127,15 +139,15 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
             return DropdownButtonHideUnderline(
               child: DropdownButton<TopKeywordDto>(
                 value: _selectedKeyword,
-                hint: Text('Choose a keyword...', style: GoogleFonts.inter(color: Colors.white54)),
-                dropdownColor: const Color(0xFF1E1E1E),
+                hint: Text('Choose a keyword...', style: GoogleFonts.inter(color: hintColor)),
+                dropdownColor: dropdownBg,
                 isExpanded: true,
-                icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                style: GoogleFonts.inter(color: Colors.white, fontSize: 16),
+                icon: Icon(Icons.arrow_drop_down, color: textColor),
+                style: GoogleFonts.inter(color: textColor, fontSize: 16),
                 items: keywords.map((keyword) {
                   return DropdownMenuItem<TopKeywordDto>(
                     value: keyword,
-                    child: Text(keyword.keywordTerm),
+                    child: Text(keyword.keywordTerm, style: TextStyle(color: textColor)),
                   );
                 }).toList(),
                 onChanged: (TopKeywordDto? newValue) {
@@ -164,23 +176,34 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
 
   Widget _buildFormatOption(String format, IconData icon) {
     final isSelected = _selectedFormat == format;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final itemBg = isSelected 
+        ? Colors.purpleAccent.withOpacity(0.2) 
+        : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03));
+    final itemBorder = isSelected 
+        ? Colors.purpleAccent 
+        : (isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08));
+    final textColor = isSelected 
+        ? (isDark ? Colors.white : Colors.black87) 
+        : (isDark ? Colors.white54 : Colors.black54);
+
     return GestureDetector(
       onTap: () => setState(() => _selectedFormat = format),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.purpleAccent.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+          color: itemBg,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? Colors.purpleAccent : Colors.white.withOpacity(0.1)),
+          border: Border.all(color: itemBorder),
         ),
         child: Column(
           children: [
-            Icon(icon, color: isSelected ? Colors.purpleAccent : Colors.white54, size: 32),
+            Icon(icon, color: isSelected ? Colors.purpleAccent : (isDark ? Colors.white54 : Colors.black54), size: 32),
             const SizedBox(height: 8),
             Text(
               format,
               style: GoogleFonts.inter(
-                color: isSelected ? Colors.white : Colors.white54,
+                color: textColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),

@@ -184,15 +184,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final scaffoldBg = theme.scaffoldBackgroundColor;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: scaffoldBg,
       appBar: AppBar(
         title: Text(
           'My Profile', 
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
         actions: [
           if (!_isEditing && !_isLoading && _error == null) ...[
             IconButton(
@@ -213,17 +220,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final confirm = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: const Color(0xFF1E1E1E),
-                    title: const Text('Đăng xuất'),
-                    content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng không?'),
+                    backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                    title: Text('Log out', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.bold)),
+                    content: Text('Are you sure you want to log out of the application?', style: GoogleFonts.inter(color: textColorSecondary)),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context, false),
-                        child: const Text('Hủy'),
+                        child: Text('Cancel', style: GoogleFonts.inter(color: textColorSecondary)),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(context, true),
-                        child: const Text('Đăng xuất', style: TextStyle(color: Colors.redAccent)),
+                        child: Text('Log out', style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
@@ -262,20 +269,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const Icon(Icons.cloud_off, size: 64, color: Colors.redAccent),
                         const SizedBox(height: 16),
                         Text(
-                          'Lỗi tải thông tin hồ sơ',
-                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          'Failed to load profile',
+                          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _error!,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(color: Colors.white54),
+                          style: GoogleFonts.inter(color: textColorSecondary),
                         ),
                         const SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: _loadProfileData,
                           icon: const Icon(Icons.refresh),
-                          label: const Text('Thử lại'),
+                          label: const Text('Retry'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.purpleAccent,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -327,16 +334,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi chọn ảnh: $e')),
+          SnackBar(content: Text('Error selecting image: $e')),
         );
       }
     }
   }
 
   void _showAvatarPicker() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
+      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -358,17 +370,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Cập nhật ảnh đại diện',
+                  'Update Profile Picture',
                   style: GoogleFonts.inter(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: textColor,
                   ),
                 ),
                 const SizedBox(height: 20),
                 ListTile(
                   leading: const Icon(Icons.photo_library, color: Colors.purpleAccent),
-                  title: Text('Chọn từ thư viện điện thoại', style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
+                  title: Text('Choose from photo gallery', style: GoogleFonts.inter(color: textColor, fontSize: 15)),
                   onTap: () {
                     Navigator.pop(context);
                     _pickImage();
@@ -376,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.account_circle, color: Colors.purpleAccent),
-                  title: Text('Sử dụng Avatar mặc định', style: GoogleFonts.inter(color: Colors.white, fontSize: 15)),
+                  title: Text('Use default avatar', style: GoogleFonts.inter(color: textColor, fontSize: 15)),
                   onTap: () {
                     setState(() {
                       _customAvatarUrl = null;
@@ -385,14 +397,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Navigator.pop(context);
                   },
                 ),
-                const Divider(color: Colors.white10),
+                Divider(color: isDark ? Colors.white10 : Colors.black12),
                 const SizedBox(height: 10),
                 Text(
-                  'Gợi ý ảnh đại diện nhanh (Mô phỏng)',
+                  'Quick Avatar Suggestions (Mock)',
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white70,
+                    color: textColorSecondary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -416,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           width: 80,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white24),
+                            border: Border.all(color: isDark ? Colors.white24 : Colors.black12),
                             image: DecorationImage(
                               image: NetworkImage(url),
                               fit: BoxFit.cover,
@@ -437,6 +449,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAvatarSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+    final textColorTertiary = isDark ? Colors.white54 : Colors.black45;
+    final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+
     return Center(
       child: Column(
         children: [
@@ -456,7 +475,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   child: CircleAvatar(
                     radius: 54,
-                    backgroundColor: const Color(0xFF1E1E1E),
+                    backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
                     backgroundImage: _pickedImage != null
                         ? (kIsWeb
                             ? NetworkImage(_pickedImage!.path)
@@ -506,13 +525,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 22, 
                   fontWeight: FontWeight.bold, 
-                  color: Colors.white
+                  color: textColor
                 ),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Enter name',
-                  hintStyle: TextStyle(color: Colors.white24),
-                  focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
-                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white10)),
+                  hintStyle: TextStyle(color: textColorTertiary),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
+                  enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cardBorderColor)),
+                  filled: false,
                 ),
               ),
             )
@@ -522,13 +542,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: GoogleFonts.inter(
                 fontSize: 22, 
                 fontWeight: FontWeight.bold, 
-                color: Colors.white
+                color: textColor
               ),
             ),
           const SizedBox(height: 6),
           Text(
             _email,
-            style: GoogleFonts.inter(fontSize: 14, color: Colors.white54),
+            style: GoogleFonts.inter(fontSize: 14, color: textColorSecondary),
           ),
           const SizedBox(height: 8),
           Container(
@@ -553,11 +573,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildQuickStatsCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final cardColor = isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02);
+    final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+    final dividerColor = isDark ? Colors.white10 : Colors.black12;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: cardBorderColor),
       ),
       child: Material(
         color: Colors.transparent,
@@ -577,11 +603,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   height: 40,
                   width: 1,
-                  color: Colors.white10,
+                  color: dividerColor,
                 ),
                 _buildStatItem(Icons.star, '$_followCount', 'Followed Topics'),
                 const Spacer(),
-                Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white.withOpacity(0.3)),
+                Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? Colors.white30 : Colors.black38),
               ],
             ),
           ),
@@ -591,6 +617,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatItem(IconData icon, String value, String label) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white54 : Colors.black54;
+
     return Expanded(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -605,12 +636,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: GoogleFonts.inter(
                   fontSize: 18, 
                   fontWeight: FontWeight.bold, 
-                  color: Colors.white
+                  color: textColor
                 ),
               ),
               Text(
                 label,
-                style: GoogleFonts.inter(fontSize: 11, color: Colors.white54),
+                style: GoogleFonts.inter(fontSize: 11, color: textColorSecondary),
               ),
             ],
           ),
@@ -657,6 +688,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required bool enabled,
     required int maxLines,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+    final inputBg = enabled 
+        ? (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03)) 
+        : (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.01));
+    final inputBorder = enabled 
+        ? Colors.purpleAccent.withOpacity(0.3) 
+        : (isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -665,16 +707,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: GoogleFonts.inter(
             fontSize: 14, 
             fontWeight: FontWeight.w600, 
-            color: Colors.white70
+            color: textColorSecondary
           ),
         ),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: enabled ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.02),
+            color: inputBg,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: enabled ? Colors.purpleAccent.withOpacity(0.3) : Colors.white.withOpacity(0.05)
+              color: inputBorder
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -682,10 +724,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             controller: controller,
             enabled: enabled,
             maxLines: maxLines,
-            style: GoogleFonts.inter(color: Colors.white, fontSize: 15),
+            style: GoogleFonts.inter(color: textColor, fontSize: 15),
             decoration: InputDecoration(
-              icon: Icon(icon, color: enabled ? Colors.purpleAccent : Colors.white30, size: 20),
+              icon: Icon(icon, color: enabled ? Colors.purpleAccent : (isDark ? Colors.white30 : Colors.black38), size: 20),
               border: InputBorder.none,
+              filled: false,
             ),
           ),
         ),
@@ -694,6 +737,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildResearchInterestsSection() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+    final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -705,7 +754,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: GoogleFonts.inter(
                 fontSize: 14, 
                 fontWeight: FontWeight.w600, 
-                color: Colors.white70
+                color: textColorSecondary
               ),
             ),
             if (_isEditing)
@@ -715,16 +764,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   showDialog(
                     context: context,
                     builder: (context) => AlertDialog(
-                      backgroundColor: const Color(0xFF1E1E1E),
-                      title: Text('Add Interest', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+                      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      title: Text('Add Interest', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.bold)),
                       content: TextField(
                         controller: _interestController,
                         autofocus: true,
-                        style: GoogleFonts.inter(color: Colors.white),
+                        style: GoogleFonts.inter(color: textColor),
                         decoration: InputDecoration(
                           hintText: 'e.g. Computer Vision',
-                          hintStyle: GoogleFonts.inter(color: Colors.white24),
+                          hintStyle: GoogleFonts.inter(color: isDark ? Colors.white24 : Colors.black26),
                           focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
+                          filled: false,
                         ),
                         onSubmitted: (val) {
                           _addInterest();
@@ -734,7 +784,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: Text('Cancel', style: GoogleFonts.inter(color: Colors.white54)),
+                          child: Text('Cancel', style: GoogleFonts.inter(color: textColorSecondary)),
                         ),
                         TextButton(
                           onPressed: () {
@@ -757,11 +807,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: _interests.map((interest) {
             return Chip(
               label: Text(interest),
-              backgroundColor: Colors.white.withOpacity(0.04),
-              labelStyle: GoogleFonts.inter(color: Colors.white, fontSize: 13),
+              backgroundColor: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+              labelStyle: GoogleFonts.inter(color: textColor, fontSize: 13),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
-                side: BorderSide(color: Colors.white.withOpacity(0.08)),
+                side: BorderSide(color: cardBorderColor),
               ),
               deleteIcon: _isEditing ? const Icon(Icons.cancel, size: 16, color: Colors.redAccent) : null,
               onDeleted: _isEditing ? () => _removeInterest(interest) : null,

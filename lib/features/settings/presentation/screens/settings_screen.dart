@@ -15,7 +15,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final UserApiService _apiService = UserApiService();
-  final TextEditingController _devTokenController = TextEditingController();
   bool _isLoading = true;
   bool _isAdmin = false;
   String _name = 'User';
@@ -39,7 +38,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         _language = prefs.getString('app_language') ?? 'English';
-        _devTokenController.text = prefs.getString('dev_jwt_token') ?? '';
       });
     } catch (e) {
       debugPrint('Error loading language setting: $e');
@@ -130,11 +128,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  @override
-  void dispose() {
-    _devTokenController.dispose();
-    super.dispose();
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -304,106 +298,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // Developer Settings Section
-                  Text(
-                    _language == 'English' ? 'Developer Testing Settings' : 'Cấu hình kiểm thử (Developer)',
-                    style: GoogleFonts.inter(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: subtitleColor),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _language == 'English'
-                              ? 'Paste Admin JWT Access Token to test live backend APIs:'
-                              : 'Dán Access Token JWT Admin để kiểm thử API live:',
-                          style: GoogleFonts.inter(fontSize: 12, color: subtitleColor),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextField(
-                            controller: _devTokenController,
-                            maxLines: 3,
-                            style: GoogleFonts.firaCode(fontSize: 11, color: textColor),
-                            decoration: InputDecoration(
-                              hintText: 'Bearer eyJhbGciOiJIUzI1Ni...',
-                              hintStyle: TextStyle(color: subtitleColor.withOpacity(0.3)),
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.purpleAccent,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                                icon: const Icon(Icons.save, size: 16),
-                                label: Text(_language == 'English' ? 'Save Token' : 'Lưu Token'),
-                                onPressed: () async {
-                                  final prefs = await SharedPreferences.getInstance();
-                                  await prefs.setString('dev_jwt_token', _devTokenController.text.trim());
-                                  if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Đã lưu Token kiểm thử! Hãy chuyển sang tab Admin để reload.', style: GoogleFonts.inter()),
-                                        backgroundColor: Colors.greenAccent,
-                                        behavior: SnackBarBehavior.floating,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            OutlinedButton.icon(
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.redAccent,
-                                side: const BorderSide(color: Colors.redAccent),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              icon: const Icon(Icons.clear, size: 16),
-                              label: Text(_language == 'English' ? 'Clear' : 'Xóa'),
-                              onPressed: () async {
-                                final prefs = await SharedPreferences.getInstance();
-                                await prefs.remove('dev_jwt_token');
-                                _devTokenController.clear();
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Đã xóa Token kiểm thử.', style: GoogleFonts.inter()),
-                                      backgroundColor: Colors.purpleAccent,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
                   // Settings options
                   Text(
                     _language == 'English' ? 'General Settings' : 'Cài đặt chung',
@@ -467,6 +361,62 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onTap: _showLanguageSelector,
                         ),
                         Divider(height: 1, color: borderColor),
+                        // Help & Support
+                        ListTile(
+                          leading: const Icon(Icons.help_outline, color: Colors.purpleAccent),
+                          title: Text(
+                            _language == 'English' ? 'Help & Support' : 'Trợ giúp & Hỗ trợ',
+                            style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500),
+                          ),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 14, color: subtitleColor),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                                title: Text(
+                                  _language == 'English' ? 'Help & Support' : 'Trợ giúp & Hỗ trợ',
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
+                                ),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _language == 'English'
+                                          ? 'For any questions or technical support, please contact:'
+                                          : 'Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ kỹ thuật, vui lòng liên hệ:',
+                                      style: GoogleFonts.inter(color: subtitleColor),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.email, size: 18, color: Colors.purpleAccent),
+                                        const SizedBox(width: 8),
+                                        Text('support@trendtracker.com', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.phone, size: 18, color: Colors.purpleAccent),
+                                        const SizedBox(width: 8),
+                                        Text('+84 123 456 789', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(
+                                    child: Text('OK', style: GoogleFonts.inter(color: Colors.purpleAccent, fontWeight: FontWeight.bold)),
+                                    onPressed: () => Navigator.pop(context),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                        Divider(height: 1, color: borderColor),
                         // About App
                         ListTile(
                           leading: const Icon(Icons.info_outline, color: Colors.purpleAccent),
@@ -493,72 +443,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           },
                         ),
                       ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Logout button
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: borderColor),
-                    ),
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        foregroundColor: Colors.redAccent,
-                      ),
-                      icon: const Icon(Icons.logout),
-                      label: Text(
-                        _language == 'English' ? 'Log Out' : 'Đăng xuất',
-                        style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                      onPressed: () {
-                        // Confirm logout
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                            title: Text(
-                              _language == 'English' ? 'Confirm Log Out' : 'Xác nhận Đăng xuất',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.bold),
-                            ),
-                            content: Text(
-                              _language == 'English'
-                                  ? 'Are you sure you want to sign out?'
-                                  : 'Bạn có chắc chắn muốn đăng xuất tài khoản?',
-                              style: GoogleFonts.inter(),
-                            ),
-                            actions: [
-                              TextButton(
-                                child: Text(_language == 'English' ? 'Cancel' : 'Hủy bỏ',
-                                    style: GoogleFonts.inter(color: subtitleColor)),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                              TextButton(
-                                child: Text(_language == 'English' ? 'Log Out' : 'Đăng xuất',
-                                    style: GoogleFonts.inter(color: Colors.redAccent, fontWeight: FontWeight.bold)),
-                                onPressed: () {
-                                  Navigator.pop(context); // Close dialog
-                                  Navigator.pop(context); // Pop SettingsScreen
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        _language == 'English' ? 'Logged out successfully (Mock)' : 'Đăng xuất thành công (Mô phỏng)',
-                                        style: GoogleFonts.inter(),
-                                      ),
-                                      backgroundColor: Colors.purpleAccent,
-                                      behavior: SnackBarBehavior.floating,
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
                     ),
                   ),
                 ],

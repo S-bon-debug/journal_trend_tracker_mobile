@@ -132,25 +132,30 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final textColorSecondary = isDark ? Colors.white54 : Colors.black54;
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: Text(
             'Bookmarks & Follows',
-            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+            style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
           ),
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: textColor),
             onPressed: () => Navigator.pop(context),
           ),
           bottom: TabBar(
             indicatorColor: Colors.purpleAccent,
             labelColor: Colors.purpleAccent,
-            unselectedLabelColor: Colors.white54,
+            unselectedLabelColor: textColorSecondary,
             labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
             tabs: const [
               Tab(text: 'Bookmarked Papers'),
@@ -170,12 +175,16 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                         children: [
                           const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
                           const SizedBox(height: 16),
-                          Text('Lỗi kết nối: $_error', style: GoogleFonts.inter(color: Colors.white70), textAlign: TextAlign.center),
+                          Text(
+                            'Connection error: $_error', 
+                            style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black87), 
+                            textAlign: TextAlign.center
+                          ),
                           const SizedBox(height: 16),
                           ElevatedButton(
                             onPressed: _loadData,
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                            child: const Text('Thử lại'),
+                            child: const Text('Retry'),
                           )
                         ],
                       ),

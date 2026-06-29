@@ -176,15 +176,20 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return true;
     }).toList();
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
           'Notifications',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
+          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
         actions: [
           if (!_isLoading && _error == null)
             TextButton.icon(
@@ -206,15 +211,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
                         const SizedBox(height: 16),
                         Text(
-                          'Lỗi kết nối: $_error', 
-                          style: GoogleFonts.inter(color: Colors.white70), 
+                          'Connection error: $_error', 
+                          style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black87), 
                           textAlign: TextAlign.center
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _loadNotifications,
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Thử lại'),
+                          child: const Text('Retry'),
                         )
                       ],
                     ),
@@ -245,11 +250,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.notifications_off_outlined, size: 64, color: Colors.white.withOpacity(0.1)),
+                                      Icon(
+                                        Icons.notifications_off_outlined, 
+                                        size: 64, 
+                                        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)
+                                      ),
                                       const SizedBox(height: 16),
                                       Text(
                                         'No notifications found.',
-                                        style: GoogleFonts.inter(color: Colors.white38, fontSize: 16),
+                                        style: GoogleFonts.inter(
+                                          color: isDark ? Colors.white38 : Colors.black38, 
+                                          fontSize: 16
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -264,16 +276,25 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   final item = filteredList[index];
                                   final isRead = item.isRead || _locallyReadIds.contains(item.id);
                                   
+                                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  final textColor = isDark ? Colors.white : Colors.black87;
+                                  final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+                                  final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
+                                  
+                                  final cardBg = isRead
+                                      ? (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02))
+                                      : (isDark ? Colors.purpleAccent.withOpacity(0.04) : Colors.purpleAccent.withOpacity(0.06));
+                                      
+                                  final cardBorderColor = isRead
+                                      ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06))
+                                      : (isDark ? Colors.purpleAccent.withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.25));
+
                                   return Container(
                                     decoration: BoxDecoration(
-                                      color: isRead
-                                          ? Colors.white.withOpacity(0.02)
-                                          : Colors.purpleAccent.withOpacity(0.04),
+                                      color: cardBg,
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(
-                                        color: isRead
-                                            ? Colors.white.withOpacity(0.06)
-                                            : Colors.purpleAccent.withOpacity(0.15),
+                                        color: cardBorderColor,
                                       ),
                                     ),
                                     child: ClipRRect(
@@ -302,7 +323,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                               style: GoogleFonts.inter(
                                                                 fontSize: 14,
                                                                 fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                                                                color: Colors.white,
+                                                                color: textColor,
                                                               ),
                                                             ),
                                                           ),
@@ -322,13 +343,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                         item.body,
                                                         style: GoogleFonts.inter(
                                                           fontSize: 13,
-                                                          color: isRead ? Colors.white54 : Colors.white70,
+                                                          color: isRead ? textColorSecondary : textColor,
                                                         ),
                                                       ),
                                                       const SizedBox(height: 8),
                                                       Text(
                                                         _formatTimestamp(item.createdAt),
-                                                        style: GoogleFonts.inter(fontSize: 11, color: Colors.white30),
+                                                        style: GoogleFonts.inter(fontSize: 11, color: textColorTertiary),
                                                       ),
                                                     ],
                                                   ),
@@ -351,6 +372,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildFilterChip(String value) {
     final isSelected = _filter == value;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final chipBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
+    final chipSelectedBg = Colors.purpleAccent.withOpacity(0.15);
+    final labelColor = isSelected 
+        ? Colors.purpleAccent 
+        : (isDark ? Colors.white70 : Colors.black87);
+    final chipBorder = isSelected 
+        ? Colors.purpleAccent 
+        : (isDark ? Colors.transparent : Colors.black.withOpacity(0.1));
+
     return ChoiceChip(
       label: Text(value),
       selected: isSelected,
@@ -361,15 +392,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           });
         }
       },
-      backgroundColor: Colors.white.withOpacity(0.04),
-      selectedColor: Colors.purpleAccent.withOpacity(0.2),
+      backgroundColor: chipBg,
+      selectedColor: chipSelectedBg,
       labelStyle: GoogleFonts.inter(
-        color: isSelected ? Colors.purpleAccent : Colors.white54,
+        color: labelColor,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: isSelected ? Colors.purpleAccent : Colors.transparent),
+        side: BorderSide(color: chipBorder),
       ),
       showCheckmark: false,
     );

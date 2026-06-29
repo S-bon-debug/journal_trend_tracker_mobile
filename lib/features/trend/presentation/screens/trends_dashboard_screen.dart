@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
 import '../../data/repositories/trend_repository.dart';
 
@@ -28,7 +29,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _repository = TrendRepository(dio: Dio());
+    _repository = TrendRepository(dio: DioClient.dio);
     _loadInitialData();
   }
 
@@ -63,15 +64,20 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Trends Dashboard', style: GoogleFonts.inter(fontWeight: FontWeight.bold)),
+        title: Text('Trends Dashboard', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: IconThemeData(color: textColor),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh, color: textColor),
             onPressed: _loadInitialData,
           )
         ],
@@ -110,9 +116,10 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Text(
       title,
-      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.white),
+      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87),
     );
   }
 
@@ -140,17 +147,18 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   }
 
   Widget _buildStatCard(String title, String value, Color color) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: GoogleFonts.inter(color: Colors.white70, fontSize: 14)),
+          Text(title, style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black54, fontSize: 14)),
           const SizedBox(height: 8),
           Text(
             value,
@@ -178,13 +186,18 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
           
           final spots = trend.stats.map((e) => FlSpot(e.year.toDouble(), e.paperCount.toDouble())).toList();
           
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+          final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
+          final cardBorderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08);
+          final labelColor = isDark ? Colors.white54 : Colors.black45;
+          
           return Container(
             height: 300,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: cardColor,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: cardBorderColor),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,13 +213,13 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                           sideTitles: SideTitles(
                             showTitles: true,
                             reservedSize: 40,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: Colors.white54, fontSize: 10)),
+                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: labelColor, fontSize: 10)),
                           )
                         ),
                         bottomTitles: AxisTitles(
                           sideTitles: SideTitles(
                             showTitles: true,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: Colors.white54, fontSize: 10)),
+                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: labelColor, fontSize: 10)),
                           )
                         ),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -250,10 +263,11 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                 runSpacing: 8.0,
                 children: snapshot.data!.map((keyword) {
                   final isSelected = _selectedKeywordId == keyword.keywordId;
+                  final isDark = Theme.of(context).brightness == Brightness.dark;
                   return ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isSelected ? Colors.purpleAccent : Colors.grey[800],
-                      foregroundColor: Colors.white,
+                      backgroundColor: isSelected ? Colors.purpleAccent : (isDark ? Colors.grey[800] : Colors.grey[300]),
+                      foregroundColor: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black87),
                       elevation: isSelected ? 4 : 0,
                     ),
                     onPressed: () {
@@ -282,27 +296,31 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
         } else if (snapshot.hasData) {
           final topics = snapshot.data!;
           return Column(
-            children: topics.map((topic) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.trending_up, color: Colors.greenAccent),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      topic.query,
-                      style: GoogleFonts.inter(color: Colors.white, fontSize: 16),
+            children: topics.map((topic) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.trending_up, color: Colors.greenAccent),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        topic.query,
+                        style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontSize: 16),
+                      ),
                     ),
-                  ),
-                  Text('${topic.searchCount} searches', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
-                ],
-              ),
-            )).toList(),
+                    Text('${topic.searchCount} searches', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
+                  ],
+                ),
+              );
+            }).toList(),
           );
         }
         return const SizedBox.shrink();
@@ -324,12 +342,13 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
               itemCount: snapshot.data!.length,
               itemBuilder: (context, index) {
                 final author = snapshot.data![index];
+                final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
                   width: 200,
                   margin: const EdgeInsets.only(right: 12),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
                   ),
@@ -341,9 +360,9 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                         child: Text(author.name[0], style: const TextStyle(color: Colors.blueAccent)),
                       ),
                       const Spacer(),
-                      Text(author.name, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      Text(author.name, style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
-                      Text('${author.paperCount} papers', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
+                      Text('${author.paperCount} papers', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
                     ],
                   ),
                 );
@@ -364,27 +383,31 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
           return Column(
-            children: snapshot.data!.map((journal) => Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.book, color: Colors.orangeAccent),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Text(
-                      journal.journalName,
-                      style: GoogleFonts.inter(color: Colors.white, fontSize: 14),
+            children: snapshot.data!.map((journal) {
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.book, color: Colors.orangeAccent),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Text(
+                        journal.journalName,
+                        style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
+                      ),
                     ),
-                  ),
-                  Text('${journal.paperCount} papers', style: GoogleFonts.inter(color: Colors.white54, fontSize: 12)),
-                ],
-              ),
-            )).toList(),
+                    Text('${journal.paperCount} papers', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
+                  ],
+                ),
+              );
+            }).toList(),
           );
         }
         return const SizedBox.shrink();

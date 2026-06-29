@@ -124,7 +124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi cập nhật cấu hình: $e', style: GoogleFonts.inter()),
+            content: Text('Error updating settings: $e', style: GoogleFonts.inter()),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),
@@ -184,14 +184,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                       children: [
                         const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
                         const SizedBox(height: 16),
-                        Text('Lỗi kết nối API Admin', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
+                        Text('Admin API connection error', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
                         const SizedBox(height: 8),
                         Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54)),
                         const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _loadDashboardData,
                           style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Thử lại'),
+                          child: const Text('Retry'),
                         )
                       ],
                     ),
