@@ -40,7 +40,7 @@ class ApiConfig {
 
   static String get adminUrl {
     if (isProduction) {
-      return 'https://admin-service-y388.onrender.com';
+      return 'https://admin-service-924r.onrender.com';
     } else {
       if (!kIsWeb && Platform.isAndroid) {
         return 'http://10.0.2.2:5035';
