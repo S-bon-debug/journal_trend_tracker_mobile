@@ -18,7 +18,7 @@ class ApiConfig {
 
   static String get paperUrl {
     if (isProduction) {
-      return 'https://paper-service-ynmc.onrender.com';
+      return 'https://prn-paperservice.onrender.com';
     } else {
       if (!kIsWeb && Platform.isAndroid) {
         return 'http://10.0.2.2:5145';
