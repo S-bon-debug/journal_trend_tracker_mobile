@@ -51,7 +51,7 @@ class ApiConfig {
 
   static String get trendUrl {
     if (isProduction) {
-      return 'https://trend-service-ab5q.onrender.com';
+      return 'https://journal-trend-tracker-backend-vyt9.onrender.com';
     } else {
       if (!kIsWeb && Platform.isAndroid) {
         return 'http://10.0.2.2:5003';
