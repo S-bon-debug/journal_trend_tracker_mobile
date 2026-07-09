@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/admin_models.dart';
 import '../../data/services/admin_api_service.dart';
-import 'user_management_screen.dart';
+import '../../../user/auth/data/services/auth_api_service.dart';
+import '../widgets/admin_ui.dart';
 import 'sync_manager_screen.dart';
+import 'user_management_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -14,24 +18,19 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> with SingleTickerProviderStateMixin {
   final AdminApiService _apiService = AdminApiService();
-  late TabController _tabController;
+  final Map<String, TextEditingController> _settingControllers = {};
 
+  late TabController _tabController;
   bool _isLoading = true;
+  bool _isSavingSettings = false;
   String? _error;
 
-  // Stats
   int _activeSourcesCount = 0;
   int _totalJobsCount = 0;
   int _totalUsersCount = 0;
   int _lockedUsersCount = 0;
-
-  // Lists
   List<SystemSettingDto> _settings = [];
   List<AuditLogDto> _logs = [];
-
-  // Controllers for settings editing
-  final Map<String, TextEditingController> _settingControllers = {};
-  bool _isSavingSettings = false;
 
   @override
   void initState() {
@@ -43,7 +42,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   void dispose() {
     _tabController.dispose();
-    for (var controller in _settingControllers.values) {
+    for (final controller in _settingControllers.values) {
       controller.dispose();
     }
     super.dispose();
@@ -59,28 +58,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       final users = await _apiService.getUsers();
       final sources = await _apiService.getApiSources();
       final jobs = await _apiService.getSyncJobs();
-      final settingsList = await _apiService.getSettings();
-      final auditLogs = await _apiService.getLogs();
+      final settings = await _apiService.getSettings();
+      final logs = await _apiService.getLogs();
 
-      _settings = settingsList;
-      _logs = auditLogs;
-
-      // Populate text controllers for settings
-      for (var setting in _settings) {
-        if (_settingControllers.containsKey(setting.key)) {
-          _settingControllers[setting.key]!.text = setting.value;
-        } else {
-          _settingControllers[setting.key] = TextEditingController(text: setting.value);
-        }
+      for (final setting in settings) {
+        _settingControllers.putIfAbsent(setting.key, () => TextEditingController());
+        _settingControllers[setting.key]!.text = setting.value;
       }
 
-      // Compute statistics
-      _activeSourcesCount = sources.where((s) => s.isActive).length;
-      _totalJobsCount = jobs.length;
-      _totalUsersCount = users.length;
-      _lockedUsersCount = users.where((u) => u.status == 1).length; // 1 is locked
-
       setState(() {
+        _settings = settings;
+        _logs = logs;
+        _activeSourcesCount = sources.where((s) => s.isActive).length;
+        _totalJobsCount = jobs.length;
+        _totalUsersCount = users.length;
+        _lockedUsersCount = users.where((u) => u.status == 1).length;
         _isLoading = false;
       });
     } catch (e) {
@@ -92,140 +84,87 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   }
 
   Future<void> _saveSettings() async {
-    setState(() {
-      _isSavingSettings = true;
-    });
-
+    setState(() => _isSavingSettings = true);
     try {
       final updatedSettings = _settings.map((setting) {
         return SystemSettingDto(
           key: setting.key,
           value: _settingControllers[setting.key]?.text ?? setting.value,
           description: setting.description,
-          updatedBy: '11111111-1111-1111-1111-111111111111',
+          updatedBy: setting.updatedBy,
           updatedAt: DateTime.now().toIso8601String(),
         );
       }).toList();
 
       final success = await _apiService.updateSettings(updatedSettings);
       if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Cập nhật cấu hình hệ thống thành công!', style: GoogleFonts.inter()),
-              backgroundColor: Colors.purpleAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-        await _loadDashboardData();
-      }
-    } catch (e) {
-      if (mounted) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error updating settings: $e', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
+          const SnackBar(
+            content: Text('Đã lưu cấu hình hệ thống'),
+            backgroundColor: Color(0xFF16A34A),
             behavior: SnackBarBehavior.floating,
           ),
         );
+        await _loadDashboardData();
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không lưu được cấu hình: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isSavingSettings = false;
-        });
-      }
+      if (mounted) setState(() => _isSavingSettings = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF121212) : Colors.grey[50];
-    final textColor = isDark ? Colors.white : Colors.black87;
+    final palette = AdminPalette(context);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text(
-          'Bảng điều khiển Admin',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
-        ),
+        title: Text('Quản trị hệ thống', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: Colors.purpleAccent,
-          labelColor: Colors.purpleAccent,
-          unselectedLabelColor: isDark ? Colors.white54 : Colors.black54,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
-          tabs: const [
-            Tab(text: 'Tổng quan & Cấu hình'),
-            Tab(text: 'Nhật ký hoạt động'),
-          ],
-        ),
+        iconTheme: IconThemeData(color: palette.text),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadDashboardData,
-          )
+            tooltip: 'Đăng xuất',
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final authService = AuthApiService();
+              await authService.logout();
+            },
+          ),
+          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadDashboardData),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primaryColor,
+          labelColor: AppTheme.primaryColor,
+          unselectedLabelColor: palette.muted,
+          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
+          tabs: const [
+            Tab(text: 'Tổng quan'),
+            Tab(text: 'Nhật ký'),
+          ],
+        ),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
-                        const SizedBox(height: 16),
-                        Text('Admin API connection error', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                        const SizedBox(height: 8),
-                        Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54)),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _loadDashboardData,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Retry'),
-                        )
-                      ],
-                    ),
-                  ),
-                )
+              ? AdminErrorState(message: _error!, onRetry: _loadDashboardData)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.amberAccent.withOpacity(0.15),
-                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
-                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
                         children: [
-                          _buildOverviewTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
-                          _buildAuditLogsTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                          _buildOverview(palette),
+                          _buildLogs(palette),
                         ],
                       ),
                     ),
@@ -234,342 +173,215 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  Widget _buildOverviewTab(bool isDark, {required Color cardColor, required Color borderColor, required Color textColor}) {
-    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Row of Stat Cards
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.4,
+  Widget _buildOverview(AdminPalette palette) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        AdminSurface(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildStatCard('Người dùng', 'Tổng số: $_totalUsersCount', 'Đã khóa: $_lockedUsersCount', Icons.people, Colors.blueAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('Đồng bộ API', 'Hoạt động: $_activeSourcesCount', 'Cấu hình nguồn', Icons.cloud_sync, Colors.greenAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('Lịch sử đồng bộ', 'Tổng số: $_totalJobsCount', 'Theo dõi bài báo', Icons.history, Colors.amberAccent, cardColor, borderColor, textColor, subtitleColor),
-              _buildStatCard('Nhật ký hệ thống', 'Tổng số: ${_logs.length}', 'Thay đổi gần đây', Icons.assignment, Colors.purpleAccent, cardColor, borderColor, textColor, subtitleColor),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          // Shortcut Tiles Section
-          Text('Quản lý nhanh', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildShortcutCard(
-                  title: 'Quản lý Người dùng',
-                  desc: 'Khóa / Mở khóa tài khoản',
-                  icon: Icons.people_outline,
-                  color: Colors.blueAccent,
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  textColor: textColor,
-                  subtitleColor: subtitleColor,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const UserManagementScreen()));
-                  },
-                ),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.primaryColor),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               Expanded(
-                child: _buildShortcutCard(
-                  title: 'Quản lý Đồng bộ API',
-                  desc: 'Bật/tắt nguồn API & lịch sử',
-                  icon: Icons.cloud_sync_outlined,
-                  color: Colors.greenAccent,
-                  cardColor: cardColor,
-                  borderColor: borderColor,
-                  textColor: textColor,
-                  subtitleColor: subtitleColor,
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SyncManagerScreen()));
-                  },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Bảng điều khiển vận hành', style: GoogleFonts.outfit(fontSize: 21, fontWeight: FontWeight.w800, color: palette.text)),
+                    const SizedBox(height: 4),
+                    Text('Theo dõi người dùng, nguồn dữ liệu, cấu hình và lịch sử thay đổi trong một nơi.', style: GoogleFonts.inter(fontSize: 13, height: 1.4, color: palette.muted)),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-
-          // System Settings Editor
-          Text('Cấu hình hệ thống', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+        const SizedBox(height: 12),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final count = constraints.maxWidth >= 760 ? 4 : 2;
+            return GridView.count(
+              crossAxisCount: count,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: count == 4 ? 1.35 : 1.12,
               children: [
-                ..._settings.map((setting) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              setting.key,
-                              style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purpleAccent),
-                            ),
-                            const Spacer(),
-                            if (setting.description != null)
-                              Tooltip(
-                                message: setting.description!,
-                                triggerMode: TooltipTriggerMode.tap,
-                                child: const Icon(Icons.info_outline, size: 16, color: Colors.white30),
-                              )
-                          ],
-                        ),
-                        if (setting.description != null) ...[
-                          const SizedBox(height: 4),
-                          Text(setting.description!, style: GoogleFonts.inter(fontSize: 11, color: subtitleColor)),
-                        ],
-                        const SizedBox(height: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.white.withOpacity(0.05)),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-                          child: TextField(
-                            controller: _settingControllers[setting.key],
-                            style: GoogleFonts.inter(fontSize: 14, color: textColor),
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purpleAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    icon: _isSavingSettings
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.save),
-                    label: Text(
-                      _isSavingSettings ? 'Đang lưu...' : 'Lưu cấu hình',
-                      style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white),
-                    ),
-                    onPressed: _isSavingSettings ? null : _saveSettings,
-                  ),
-                ),
+                _statCard('Người dùng', _totalUsersCount.toString(), '$_lockedUsersCount đã khóa', Icons.people_alt_outlined, AppTheme.accentColor),
+                _statCard('Nguồn API', _activeSourcesCount.toString(), 'đang hoạt động', Icons.hub_outlined, const Color(0xFF22C55E)),
+                _statCard('Lượt sync', _totalJobsCount.toString(), 'job đã ghi nhận', Icons.sync_rounded, const Color(0xFFF59E0B)),
+                _statCard('Nhật ký', _logs.length.toString(), 'hoạt động gần đây', Icons.receipt_long_outlined, AppTheme.primaryColor),
               ],
+            );
+          },
+        ),
+        const SizedBox(height: 20),
+        Text('Quản lý nhanh', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _shortcutCard(
+                title: 'Người dùng',
+                description: 'Tìm kiếm, lọc vai trò, khóa hoặc mở khóa tài khoản',
+                icon: Icons.manage_accounts_outlined,
+                color: AppTheme.accentColor,
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UserManagementScreen())),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _shortcutCard(
+                title: 'Đồng bộ API',
+                description: 'Bật tắt nguồn dữ liệu, chạy sync và xem lịch sử',
+                icon: Icons.cloud_sync_outlined,
+                color: const Color(0xFF22C55E),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncManagerScreen())),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text('Cấu hình hệ thống', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+        const SizedBox(height: 10),
+        _buildSettings(palette),
+      ],
     );
   }
 
-  Widget _buildStatCard(
-    String title,
-    String primaryStat,
-    String secondaryStat,
-    IconData icon,
-    Color color,
-    Color cardColor,
-    Color borderColor,
-    Color textColor,
-    Color subtitleColor,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
+  Widget _statCard(String title, String value, String caption, IconData icon, Color color) {
+    final palette = AdminPalette(context);
+    return AdminSurface(
+      padding: const EdgeInsets.all(14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: 24),
-              const Spacer(),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: color.withOpacity(0.7)),
-              )
-            ],
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 20),
           ),
           const Spacer(),
-          Text(title, style: GoogleFonts.inter(fontSize: 13, color: subtitleColor)),
-          const SizedBox(height: 4),
-          Text(primaryStat, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
-          Text(secondaryStat, style: GoogleFonts.inter(fontSize: 11, color: subtitleColor)),
+          Text(title, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+          const SizedBox(height: 3),
+          Text(value, style: GoogleFonts.outfit(fontSize: 26, fontWeight: FontWeight.w800, color: palette.text)),
+          Text(caption, style: GoogleFonts.inter(fontSize: 11, color: palette.muted)),
         ],
       ),
     );
   }
 
-  Widget _buildShortcutCard({
-    required String title,
-    required String desc,
-    required IconData icon,
-    required Color color,
-    required Color cardColor,
-    required Color borderColor,
-    required Color textColor,
-    required Color subtitleColor,
-    required VoidCallback onTap,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: borderColor),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: color, size: 28),
-                const SizedBox(height: 12),
-                Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14, color: textColor)),
-                const SizedBox(height: 4),
-                Text(desc, style: GoogleFonts.inter(fontSize: 11, color: subtitleColor), maxLines: 2, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-          ),
-        ),
+  Widget _shortcutCard({required String title, required String description, required IconData icon, required Color color, required VoidCallback onTap}) {
+    final palette = AdminPalette(context);
+    return AdminSurface(
+      onTap: onTap,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 26),
+          const SizedBox(height: 10),
+          Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: palette.text)),
+          const SizedBox(height: 4),
+          Text(description, maxLines: 3, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, height: 1.35, color: palette.muted)),
+        ],
       ),
     );
   }
 
-  Widget _buildAuditLogsTab(bool isDark, {required Color cardColor, required Color borderColor, required Color textColor}) {
-    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+  Widget _buildSettings(AdminPalette palette) {
+    return AdminSurface(
+      child: Column(
+        children: [
+          for (final setting in _settings) ...[
+            _settingField(setting, palette),
+            if (setting != _settings.last) Divider(height: 22, color: palette.border),
+          ],
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isSavingSettings ? null : _saveSettings,
+              icon: _isSavingSettings
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Icon(Icons.save_outlined),
+              label: Text(_isSavingSettings ? 'Đang lưu...' : 'Lưu cấu hình'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
-    if (_logs.isEmpty) {
-      return Center(
-        child: Text(
-          'Không có nhật ký hoạt động.',
-          style: GoogleFonts.inter(color: subtitleColor),
+  Widget _settingField(SystemSettingDto setting, AdminPalette palette) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_settingTitle(setting.key), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: palette.text)),
+        if (setting.description != null && setting.description!.isNotEmpty) ...[
+          const SizedBox(height: 3),
+          Text(setting.description!, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+        ],
+        const SizedBox(height: 8),
+        TextField(
+          controller: _settingControllers[setting.key],
+          style: GoogleFonts.inter(color: palette.text),
+          decoration: InputDecoration(
+            hintText: setting.key,
+            prefixIcon: const Icon(Icons.tune),
+          ),
         ),
-      );
+      ],
+    );
+  }
+
+  Widget _buildLogs(AdminPalette palette) {
+    if (_logs.isEmpty) {
+      return const AdminEmptyState(icon: Icons.receipt_long_outlined, title: 'Chưa có nhật ký', message: 'Các thay đổi quan trọng sẽ xuất hiện tại đây.');
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: _logs.length,
       itemBuilder: (context, index) {
         final log = _logs[index];
-        final actionColor = _getLogActionColor(log.action);
-        final date = DateTime.tryParse(log.createdAt)?.toLocal() ?? DateTime.now();
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
-          ),
+        final color = _logColor(log.action);
+        return AdminSurface(
+          margin: const EdgeInsets.only(bottom: 10),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: actionColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: actionColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      log.action,
-                      style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold, fontSize: 11, color: actionColor),
-                    ),
-                  ),
+                  AdminStatusPill(label: log.action, color: color),
                   const Spacer(),
-                  Text(
-                    '${date.day}/${date.month}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
-                    style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
-                  ),
+                  Text(formatAdminDate(log.createdAt, includeYear: true), style: GoogleFonts.inter(fontSize: 11, color: palette.muted)),
                 ],
               ),
               const SizedBox(height: 12),
               if (log.entityType != null)
-                Text(
-                  'Đối tượng: ${log.entityType} (${log.entityId ?? 'Không có'})',
-                  style: GoogleFonts.inter(fontSize: 13, color: textColor, fontWeight: FontWeight.w500),
-                ),
+                Text('${log.entityType} ${log.entityId ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: palette.text)),
               const SizedBox(height: 4),
-              Text(
-                'Mã Admin: ${log.adminUserId}',
-                style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
-              ),
-              if (log.ipAddress != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  'Địa chỉ IP: ${log.ipAddress}',
-                  style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
-                ),
-              ],
+              Text('Admin: ${log.adminUserId}', maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+              if (log.ipAddress != null) Text('IP: ${log.ipAddress}', style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
               if (log.oldValue != null || log.newValue != null) ...[
-                const Divider(height: 24, color: Colors.white10),
+                Divider(height: 22, color: palette.border),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (log.oldValue != null)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Giá trị cũ', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(log.oldValue.toString(), style: GoogleFonts.firaCode(fontSize: 10, color: Colors.redAccent)),
-                          ],
-                        ),
-                      ),
-                    if (log.oldValue != null && log.newValue != null)
-                      const SizedBox(width: 16),
-                    if (log.newValue != null)
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Giá trị mới', style: GoogleFonts.inter(fontSize: 10, color: subtitleColor, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(log.newValue.toString(), style: GoogleFonts.firaCode(fontSize: 10, color: Colors.greenAccent)),
-                          ],
-                        ),
-                      ),
+                    if (log.oldValue != null) Expanded(child: _valueBlock('Cũ', log.oldValue.toString(), const Color(0xFFEF4444), palette)),
+                    if (log.oldValue != null && log.newValue != null) const SizedBox(width: 10),
+                    if (log.newValue != null) Expanded(child: _valueBlock('Mới', log.newValue.toString(), const Color(0xFF22C55E), palette)),
                   ],
-                )
-              ]
+                ),
+              ],
             ],
           ),
         );
@@ -577,10 +389,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     );
   }
 
-  Color _getLogActionColor(String action) {
-    if (action.contains('CREATE')) return Colors.greenAccent;
-    if (action.contains('UPDATE')) return Colors.blueAccent;
-    if (action.contains('TOGGLE') || action.contains('LOCK')) return Colors.amberAccent;
-    return Colors.purpleAccent;
+  Widget _valueBlock(String label, String value, Color color, AdminPalette palette) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: palette.muted)),
+        const SizedBox(height: 4),
+        Text(value, maxLines: 4, overflow: TextOverflow.ellipsis, style: GoogleFonts.firaCode(fontSize: 11, color: color)),
+      ],
+    );
+  }
+
+  Color _logColor(String action) {
+    if (action.contains('CREATE')) return const Color(0xFF22C55E);
+    if (action.contains('UPDATE')) return AppTheme.accentColor;
+    if (action.contains('TOGGLE') || action.contains('LOCK')) return const Color(0xFFF59E0B);
+    return AppTheme.primaryColor;
+  }
+
+  String _settingTitle(String key) {
+    switch (key) {
+      case 'max_search_results':
+        return 'Số kết quả tìm kiếm tối đa';
+      case 'trend_snapshot_schedule':
+        return 'Lịch tạo snapshot xu hướng';
+      case 'email_from':
+        return 'Email gửi thông báo';
+      case 'sync_fields':
+        return 'Lĩnh vực đồng bộ';
+      default:
+        return key.replaceAll('_', ' ');
+    }
   }
 }

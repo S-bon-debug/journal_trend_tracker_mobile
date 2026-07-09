@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/admin_models.dart';
 import '../../data/services/admin_api_service.dart';
+import '../widgets/admin_ui.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -12,18 +15,15 @@ class UserManagementScreen extends StatefulWidget {
 
 class _UserManagementScreenState extends State<UserManagementScreen> {
   final AdminApiService _apiService = AdminApiService();
+  final Set<String> _togglingUserIds = {};
+
   List<AdminUserDto> _allUsers = [];
   List<AdminUserDto> _filteredUsers = [];
-
   bool _isLoading = true;
   String? _error;
-
   String _searchQuery = '';
-  int _selectedRoleFilter = -1; // -1 means All roles
-  int _selectedStatusFilter = -1; // -1 means All statuses
-
-  // Tracks which user IDs are currently toggling status (loading state)
-  final Set<String> _togglingUserIds = {};
+  int _selectedRoleFilter = -1;
+  int _selectedStatusFilter = -1;
 
   @override
   void initState() {
@@ -38,9 +38,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     });
 
     try {
-      final usersList = await _apiService.getUsers();
+      final users = await _apiService.getUsers();
       setState(() {
-        _allUsers = usersList;
+        _allUsers = users;
         _applyFiltersAndSearch();
         _isLoading = false;
       });
@@ -53,448 +53,359 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   void _applyFiltersAndSearch() {
+    final query = _searchQuery.trim().toLowerCase();
     _filteredUsers = _allUsers.where((user) {
-      // 1. Search Query Match
-      final query = _searchQuery.toLowerCase();
-      final nameMatches = user.fullName.toLowerCase().contains(query);
-      final emailMatches = user.email.toLowerCase().contains(query);
-      final idMatches = user.id.toLowerCase().contains(query);
-      final matchesSearch = nameMatches || emailMatches || idMatches;
-
-      // 2. Role Filter Match
+      final matchesSearch = query.isEmpty ||
+          user.fullName.toLowerCase().contains(query) ||
+          user.email.toLowerCase().contains(query) ||
+          user.id.toLowerCase().contains(query);
       final matchesRole = _selectedRoleFilter == -1 || user.role == _selectedRoleFilter;
-
-      // 3. Status Filter Match
       final matchesStatus = _selectedStatusFilter == -1 || user.status == _selectedStatusFilter;
-
       return matchesSearch && matchesRole && matchesStatus;
     }).toList();
   }
 
   Future<void> _toggleUserStatus(AdminUserDto user) async {
-    final userId = user.id;
-    if (_togglingUserIds.contains(userId)) return;
+    if (_togglingUserIds.contains(user.id)) return;
 
-    setState(() {
-      _togglingUserIds.add(userId);
-    });
+    setState(() => _togglingUserIds.add(user.id));
 
     try {
-      final success = await _apiService.toggleUserStatus(userId);
-      if (success) {
-        // Find user index and update status locally
-        final userIndex = _allUsers.indexWhere((u) => u.id == userId);
-        if (userIndex != -1) {
-          final currentUser = _allUsers[userIndex];
-          // In C# UserStatus enum: active=0, locked=1, pending=2
-          final nextStatus = currentUser.status == 0 ? 1 : 0;
-          
-          setState(() {
-            _allUsers[userIndex] = AdminUserDto(
-              id: currentUser.id,
-              fullName: currentUser.fullName,
-              email: currentUser.email,
-              avatarUrl: currentUser.avatarUrl,
-              provider: currentUser.provider,
-              role: currentUser.role,
-              status: nextStatus,
-              lastLoginAt: currentUser.lastLoginAt,
-              createdAt: currentUser.createdAt,
-              updatedAt: DateTime.now().toIso8601String(),
-            );
-            _applyFiltersAndSearch();
-          });
+      final success = await _apiService.toggleUserStatus(user.id);
+      if (!success) return;
 
-          if (mounted) {
-            final nextStatusString = nextStatus == 0 ? 'Unlocked' : 'Locked';
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Successfully $nextStatusString account ${currentUser.fullName}!', style: GoogleFonts.inter()),
-                backgroundColor: nextStatus == 0 ? Colors.greenAccent : Colors.redAccent,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error changing status: $e', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+      final index = _allUsers.indexWhere((u) => u.id == user.id);
+      if (index == -1) return;
+
+      final current = _allUsers[index];
+      final nextStatus = current.status == 0 ? 1 : 0;
+      setState(() {
+        _allUsers[index] = AdminUserDto(
+          id: current.id,
+          fullName: current.fullName,
+          email: current.email,
+          avatarUrl: current.avatarUrl,
+          provider: current.provider,
+          role: current.role,
+          status: nextStatus,
+          lastLoginAt: current.lastLoginAt,
+          createdAt: current.createdAt,
+          updatedAt: DateTime.now().toIso8601String(),
         );
-      }
+        _applyFiltersAndSearch();
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(nextStatus == 0 ? 'Đã mở khóa ${current.fullName}' : 'Đã khóa ${current.fullName}'),
+          backgroundColor: nextStatus == 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không đổi được trạng thái: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _togglingUserIds.remove(userId);
-        });
-      }
+      if (mounted) setState(() => _togglingUserIds.remove(user.id));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF121212) : Colors.grey[50];
-    final cardColor = isDark ? Colors.white.withOpacity(0.04) : Colors.white;
-    final borderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+    final palette = AdminPalette(context);
+    final activeUsers = _allUsers.where((u) => u.status == 0).length;
+    final lockedUsers = _allUsers.where((u) => u.status == 1).length;
+    final adminUsers = _allUsers.where((u) => u.role == 3).length;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text(
-          'Quản lý Người dùng',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
-        ),
+        title: Text('Người dùng', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
+        iconTheme: IconThemeData(color: palette.text),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadUsers,
-          )
+          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadUsers),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
-                        const SizedBox(height: 16),
-                        Text('Error loading user list', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                        const SizedBox(height: 8),
-                        Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: subtitleColor)),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _loadUsers,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Retry'),
-                        )
-                      ],
-                    ),
-                  ),
-                )
+              ? AdminErrorState(message: _error!, onRetry: _loadUsers)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.amberAccent.withOpacity(0.15),
-                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
-                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    // Search and filters bar
-                    Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                         children: [
-                          // Search Input
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: TextField(
-                              style: GoogleFonts.inter(color: textColor),
-                              decoration: InputDecoration(
-                                icon: Icon(Icons.search, color: subtitleColor, size: 20),
-                                hintText: 'Tìm kiếm theo tên, email, uuid...',
-                                hintStyle: GoogleFonts.inter(color: subtitleColor, fontSize: 14),
-                                border: InputBorder.none,
-                              ),
-                              onChanged: (val) {
-                                setState(() {
-                                  _searchQuery = val;
-                                  _applyFiltersAndSearch();
-                                });
-                              },
-                            ),
-                          ),
+                          _buildHeader(palette, activeUsers, lockedUsers, adminUsers),
                           const SizedBox(height: 12),
-
-                          // Filter Selectors Row
-                          Row(
-                            children: [
-                              // Role filter
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: cardColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: borderColor),
+                          _buildFilters(palette),
+                          const SizedBox(height: 12),
+                          _filteredUsers.isEmpty
+                              ? const SizedBox(
+                                  height: 300,
+                                  child: AdminEmptyState(
+                                    icon: Icons.person_search_outlined,
+                                    title: 'Không tìm thấy người dùng',
+                                    message: 'Thử đổi từ khóa, vai trò hoặc trạng thái lọc.',
                                   ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<int>(
-                                      value: _selectedRoleFilter,
-                                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                      style: GoogleFonts.inter(color: textColor, fontSize: 13),
-                                      icon: Icon(Icons.arrow_drop_down, color: subtitleColor),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _selectedRoleFilter = val ?? -1;
-                                          _applyFiltersAndSearch();
-                                        });
-                                      },
-                                      items: const [
-                                        DropdownMenuItem(value: -1, child: Text('Tất cả Vai trò')),
-                                        DropdownMenuItem(value: 0, child: Text('Nhà nghiên cứu')),
-                                        DropdownMenuItem(value: 1, child: Text('Giảng viên')),
-                                        DropdownMenuItem(value: 2, child: Text('Sinh viên')),
-                                        DropdownMenuItem(value: 3, child: Text('Quản trị viên')),
-                                      ],
-                                    ),
-                                  ),
+                                )
+                              : Column(
+                                  children: _filteredUsers.map((user) {
+                                    return _buildUserCard(user, palette);
+                                  }).toList(),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-
-                              // Status filter
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  decoration: BoxDecoration(
-                                    color: cardColor,
-                                    borderRadius: BorderRadius.circular(10),
-                                    border: Border.all(color: borderColor),
-                                  ),
-                                  child: DropdownButtonHideUnderline(
-                                    child: DropdownButton<int>(
-                                      value: _selectedStatusFilter,
-                                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                                      style: GoogleFonts.inter(color: textColor, fontSize: 13),
-                                      icon: Icon(Icons.arrow_drop_down, color: subtitleColor),
-                                      onChanged: (val) {
-                                        setState(() {
-                                          _selectedStatusFilter = val ?? -1;
-                                          _applyFiltersAndSearch();
-                                        });
-                                      },
-                                      items: const [
-                                        DropdownMenuItem(value: -1, child: Text('Tất cả Trạng thái')),
-                                        DropdownMenuItem(value: 0, child: Text('Đang hoạt động')),
-                                        DropdownMenuItem(value: 1, child: Text('Đã khóa')),
-                                        DropdownMenuItem(value: 2, child: Text('Chờ duyệt')),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
                         ],
                       ),
-                    ),
-
-                    // User List
-                    Expanded(
-                      child: _filteredUsers.isEmpty
-                          ? Center(
-                              child: Text(
-                                'Không tìm thấy người dùng phù hợp.',
-                                style: GoogleFonts.inter(color: subtitleColor),
-                              ),
-                            )
-                          : ListView.builder(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              itemCount: _filteredUsers.length,
-                              itemBuilder: (context, index) {
-                                final user = _filteredUsers[index];
-                                final isToggling = _togglingUserIds.contains(user.id);
-
-                                return Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    color: cardColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: borderColor),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      // Circle Avatar with initials
-                                      CircleAvatar(
-                                        radius: 24,
-                                        backgroundColor: _getRoleColor(user.role).withOpacity(0.15),
-                                        backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
-                                        child: user.avatarUrl == null
-                                            ? Text(
-                                                user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : 'U',
-                                                style: GoogleFonts.inter(
-                                                  fontWeight: FontWeight.bold,
-                                                  color: _getRoleColor(user.role),
-                                                  fontSize: 18,
-                                                ),
-                                              )
-                                            : null,
-                                      ),
-                                      const SizedBox(width: 14),
-
-                                      // User Info Text
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              user.fullName,
-                                              style: GoogleFonts.inter(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 15,
-                                                color: textColor,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              user.email,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 12,
-                                                color: subtitleColor,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                            const SizedBox(height: 6),
-
-                                            // Badges Row
-                                            Row(
-                                              children: [
-                                                // Role badge
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: _getRoleColor(user.role).withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    user.roleString,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: _getRoleColor(user.role),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-
-                                                // Status badge
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: _getStatusColor(user.status).withOpacity(0.15),
-                                                    borderRadius: BorderRadius.circular(8),
-                                                  ),
-                                                  child: Text(
-                                                    user.statusString,
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.bold,
-                                                      color: _getStatusColor(user.status),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 10),
-
-                                      // Actions Panel (Lock / Unlock Switch)
-                                      isToggling
-                                          ? const SizedBox(
-                                              width: 32,
-                                              height: 32,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2.5,
-                                                color: Colors.purpleAccent,
-                                              ),
-                                            )
-                                          : Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  icon: Icon(
-                                                    // In C# UserStatus enum: active=0, locked=1
-                                                    user.status == 0 ? Icons.lock_open : Icons.lock,
-                                                    color: user.status == 0 ? Colors.greenAccent : Colors.redAccent,
-                                                  ),
-                                                  tooltip: user.status == 0 ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
-                                                  onPressed: () => _toggleUserStatus(user),
-                                                ),
-                                                Text(
-                                                  user.status == 0 ? 'Khóa' : 'Mở khóa',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: user.status == 0 ? Colors.greenAccent : Colors.redAccent,
-                                                  ),
-                                                )
-                                              ],
-                                            ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
                     ),
                   ],
                 ),
     );
   }
 
+  Widget _buildHeader(AdminPalette palette, int activeUsers, int lockedUsers, int adminUsers) {
+    return AdminSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.manage_accounts_outlined, color: AppTheme.primaryColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Quản lý tài khoản', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, color: palette.text)),
+                    const SizedBox(height: 3),
+                    Text('${_filteredUsers.length}/${_allUsers.length} người dùng phù hợp bộ lọc', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _metric('Hoạt động', activeUsers.toString(), const Color(0xFF22C55E), palette),
+              _metric('Đã khóa', lockedUsers.toString(), const Color(0xFFEF4444), palette),
+              _metric('Admin', adminUsers.toString(), AppTheme.primaryColor, palette),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _metric(String label, String value, Color color, AdminPalette palette) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value, style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.w800, color: color)),
+            Text(label, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilters(AdminPalette palette) {
+    return AdminSurface(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        children: [
+          TextField(
+            style: GoogleFonts.inter(color: palette.text),
+            decoration: InputDecoration(
+              prefixIcon: Icon(Icons.search, color: palette.muted),
+              hintText: 'Tìm theo tên, email hoặc UUID',
+              suffixIcon: _searchQuery.isEmpty
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () {
+                        setState(() {
+                          _searchQuery = '';
+                          _applyFiltersAndSearch();
+                        });
+                      },
+                    ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _searchQuery = value;
+                _applyFiltersAndSearch();
+              });
+            },
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(child: _filterDropdown(palette, _selectedRoleFilter, _roleItems(), (value) => _selectedRoleFilter = value)),
+              const SizedBox(width: 10),
+              Expanded(child: _filterDropdown(palette, _selectedStatusFilter, _statusItems(), (value) => _selectedStatusFilter = value)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterDropdown(AdminPalette palette, int value, List<DropdownMenuItem<int>> items, ValueChanged<int> update) {
+    return DropdownButtonFormField<int>(
+      value: value,
+      items: items,
+      dropdownColor: palette.card,
+      decoration: const InputDecoration(contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12)),
+      style: GoogleFonts.inter(color: palette.text, fontSize: 13),
+      onChanged: (next) {
+        setState(() {
+          update(next ?? -1);
+          _applyFiltersAndSearch();
+        });
+      },
+    );
+  }
+
+  List<DropdownMenuItem<int>> _roleItems() => const [
+        DropdownMenuItem(value: -1, child: Text('Tất cả vai trò')),
+        DropdownMenuItem(value: 0, child: Text('Nhà nghiên cứu')),
+        DropdownMenuItem(value: 1, child: Text('Giảng viên')),
+        DropdownMenuItem(value: 2, child: Text('Sinh viên')),
+        DropdownMenuItem(value: 3, child: Text('Quản trị viên')),
+      ];
+
+  List<DropdownMenuItem<int>> _statusItems() => const [
+        DropdownMenuItem(value: -1, child: Text('Tất cả trạng thái')),
+        DropdownMenuItem(value: 0, child: Text('Đang hoạt động')),
+        DropdownMenuItem(value: 1, child: Text('Đã khóa')),
+        DropdownMenuItem(value: 2, child: Text('Chờ duyệt')),
+      ];
+
+  Widget _buildUserCard(AdminUserDto user, AdminPalette palette) {
+    final isToggling = _togglingUserIds.contains(user.id);
+    return AdminSurface(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: _getRoleColor(user.role).withOpacity(0.14),
+            backgroundImage: user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
+            child: user.avatarUrl == null
+                ? Text(
+                    _initials(user.fullName),
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: _getRoleColor(user.role)),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(user.fullName, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: palette.text)),
+                const SizedBox(height: 2),
+                Text(user.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    AdminStatusPill(label: _roleLabel(user.role), color: _getRoleColor(user.role)),
+                    AdminStatusPill(label: _statusLabel(user.status), color: _getStatusColor(user.status)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          isToggling
+              ? const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
+              : IconButton.filledTonal(
+                  tooltip: user.status == 0 ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+                  onPressed: () => _toggleUserStatus(user),
+                  icon: Icon(user.status == 0 ? Icons.lock_open_rounded : Icons.lock_rounded),
+                  color: user.status == 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+                ),
+        ],
+      ),
+    );
+  }
+
+  String _initials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) return 'U';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return '${parts.first.characters.first}${parts.last.characters.first}'.toUpperCase();
+  }
+
+  String _roleLabel(int role) {
+    switch (role) {
+      case 3:
+        return 'Admin';
+      case 1:
+        return 'Giảng viên';
+      case 0:
+        return 'Nghiên cứu';
+      default:
+        return 'Sinh viên';
+    }
+  }
+
+  String _statusLabel(int status) {
+    switch (status) {
+      case 0:
+        return 'Hoạt động';
+      case 1:
+        return 'Đã khóa';
+      default:
+        return 'Chờ duyệt';
+    }
+  }
+
   Color _getRoleColor(int role) {
     switch (role) {
-      case 3: // Admin
-        return Colors.purpleAccent;
-      case 1: // Lecturer
-        return Colors.blueAccent;
-      case 0: // Researcher
-        return Colors.greenAccent;
-      case 2: // Student
+      case 3:
+        return AppTheme.primaryColor;
+      case 1:
+        return AppTheme.accentColor;
+      case 0:
+        return const Color(0xFF22C55E);
       default:
-        return Colors.orangeAccent;
+        return const Color(0xFFF59E0B);
     }
   }
 
   Color _getStatusColor(int status) {
     switch (status) {
-      case 0: // Active
-        return Colors.greenAccent;
-      case 1: // Locked
-        return Colors.redAccent;
-      case 2: // Pending
+      case 0:
+        return const Color(0xFF22C55E);
+      case 1:
+        return const Color(0xFFEF4444);
       default:
-        return Colors.amberAccent;
+        return const Color(0xFFF59E0B);
     }
   }
 }

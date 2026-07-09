@@ -12,6 +12,7 @@ import '../../features/user/profile/presentation/screens/profile_screen.dart';
 import '../../features/user/auth/presentation/screens/splash_screen.dart';
 import '../../features/user/auth/presentation/screens/login_screen.dart';
 import '../../features/user/auth/presentation/screens/register_screen.dart';
+import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 class AuthNotifier extends ChangeNotifier {
   static final AuthNotifier instance = AuthNotifier._();
@@ -49,8 +50,18 @@ class AppRouter {
         return null;
       }
 
-      // If logged in and going to auth screens, redirect to dashboard
+      final role = storage.getUserRole();
+
+      // If logged in and going to auth screens, redirect to appropriate landing page
       if (goingToAuth) {
+        if (role == 3) {
+          return '/admin';
+        }
+        return '/trends';
+      }
+
+      // Guard the admin route from non-admin users
+      if (state.matchedLocation == '/admin' && role != 3) {
         return '/trends';
       }
 
@@ -68,6 +79,10 @@ class AppRouter {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
