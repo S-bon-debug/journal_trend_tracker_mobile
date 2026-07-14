@@ -1,0 +1,5 @@
+- `[x]` Implement `forgotPassword` in `AuthApiService`
+- `[x]` Modify `login_screen.dart` to remove Google Login and add "Forgot Password?" link
+- `[x]` Create `forgot_password_screen.dart`
+- `[x]` Add forgot password route in `app_router.dart` and update bypass list
+- `[x]` Verify build & implementation

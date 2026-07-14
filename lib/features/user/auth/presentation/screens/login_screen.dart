@@ -42,25 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleGoogleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-
-    // Simulate Google Sign-In Callback Flow
-    await Future.delayed(const Duration(seconds: 1));
-    
-    try {
-      // Pass a mock auth code which the backend handles or responds to
-      await _authApiService.handleGoogleCallback('google-mock-auth-code');
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
-    }
-  }
 
   @override
   void dispose() {
@@ -182,6 +163,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: 8),
+
+                  // Forgot Password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => context.push('/forgot-password'),
+                      child: Text(
+                        'Forgot Password?',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 24),
 
                   // Login Button
@@ -197,37 +194,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
                         : const Text('Login'),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(child: Divider(color: theme.dividerColor)),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'OR CONTINUE WITH',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontSize: 12,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                      Expanded(child: Divider(color: theme.dividerColor)),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Google OAuth Button
-                  OutlinedButton.icon(
-                    onPressed: _isLoading ? null : _handleGoogleLogin,
-                    icon: Image.network(
-                      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/24px-Google_%22G%22_logo.svg.png',
-                      height: 20,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata),
-                    ),
-                    label: const Text('Sign in with Google'),
                   ),
                   const SizedBox(height: 32),
 
