@@ -196,6 +196,113 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
+  void _showUserDetails(AdminUserDto user) {
+    final palette = AdminPalette(context);
+    
+    String formatDate(String? dateStr) {
+      if (dateStr == null || dateStr.isEmpty) return 'Chưa đăng nhập';
+      try {
+        final date = DateTime.parse(dateStr).toLocal();
+        return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } catch (_) {
+        return dateStr;
+      }
+    }
+
+    String getProviderLabel(int provider) {
+      switch (provider) {
+        case 1:
+          return 'Google OAuth';
+        case 2:
+          return 'GitHub';
+        default:
+          return 'Email & Mật khẩu';
+      }
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: palette.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: _getRoleColor(user.role).withOpacity(0.14),
+              backgroundImage: user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
+              child: user.avatarUrl == null
+                  ? Text(_initials(user.fullName), style: TextStyle(color: _getRoleColor(user.role), fontWeight: FontWeight.bold))
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Chi tiết tài khoản',
+                style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text, fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Divider(),
+              const SizedBox(height: 8),
+              _detailRow('Họ và tên', user.fullName, palette),
+              _detailRow('Email', user.email, palette),
+              _detailRow('Vai trò', _roleLabel(user.role), palette, customColor: _getRoleColor(user.role)),
+              _detailRow('Trạng thái', _statusLabel(user.status), palette, customColor: _getStatusColor(user.status)),
+              _detailRow('Hình thức đăng ký', getProviderLabel(user.provider), palette),
+              _detailRow('Đăng nhập cuối', formatDate(user.lastLoginAt), palette),
+              _detailRow('Ngày tham gia', formatDate(user.createdAt), palette),
+              _detailRow('Cập nhật cuối', formatDate(user.updatedAt), palette),
+              _detailRow('Mã người dùng (UUID)', user.id, palette, isSelectable: true),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text('Đóng', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value, AdminPalette palette, {Color? customColor, bool isSelectable = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 12, color: palette.muted, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 2),
+          isSelectable
+              ? SelectableText(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: customColor ?? palette.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                )
+              : Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: customColor ?? palette.text,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = AdminPalette(context);
@@ -420,21 +527,33 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             ),
           ),
           const SizedBox(width: 10),
-          isToggling
-              ? const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
-              : user.status == 1
-                  ? IconButton.filledTonal(
-                      tooltip: 'Mở khóa tài khoản',
-                      onPressed: () => _toggleUserStatus(user),
-                      icon: const Icon(Icons.lock_open_rounded),
-                      color: const Color(0xFF16A34A),
-                    )
-                  : IconButton.filledTonal(
-                      tooltip: 'Vô hiệu hóa tài khoản',
-                      onPressed: () => _confirmDeactivateUser(user),
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      color: const Color(0xFFDC2626),
-                    ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton.filledTonal(
+                tooltip: 'Xem chi tiết',
+                onPressed: () => _showUserDetails(user),
+                icon: const Icon(Icons.info_outline_rounded),
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 8),
+              isToggling
+                  ? const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
+                  : user.status == 1
+                      ? IconButton.filledTonal(
+                          tooltip: 'Mở khóa tài khoản',
+                          onPressed: () => _toggleUserStatus(user),
+                          icon: const Icon(Icons.lock_open_rounded),
+                          color: const Color(0xFF16A34A),
+                        )
+                      : IconButton.filledTonal(
+                          tooltip: 'Vô hiệu hóa tài khoản',
+                          onPressed: () => _confirmDeactivateUser(user),
+                          icon: const Icon(Icons.delete_outline_rounded),
+                          color: const Color(0xFFDC2626),
+                        ),
+            ],
+          ),
         ],
       ),
     );
