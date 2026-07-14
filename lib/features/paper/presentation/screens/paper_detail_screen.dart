@@ -453,8 +453,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 32),
-                ],
+                const SizedBox(height: 32),
               ],
             ),
           ),
