@@ -117,6 +117,85 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     }
   }
 
+  Future<void> _confirmDeactivateUser(AdminUserDto user) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Vô hiệu hóa tài khoản', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        content: Text('Bạn có chắc chắn muốn vô hiệu hóa tài khoản của ${user.fullName} (${user.email}) không? Người dùng này sẽ không thể đăng nhập.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Hủy', style: const TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Vô hiệu hóa'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _deactivateUser(user);
+    }
+  }
+
+  Future<void> _deactivateUser(AdminUserDto user) async {
+    if (_togglingUserIds.contains(user.id)) return;
+
+    setState(() => _togglingUserIds.add(user.id));
+
+    try {
+      final success = await _apiService.deleteUser(user.id);
+      if (!success) return;
+
+      final index = _allUsers.indexWhere((u) => u.id == user.id);
+      if (index == -1) return;
+
+      final current = _allUsers[index];
+      setState(() {
+        _allUsers[index] = AdminUserDto(
+          id: current.id,
+          fullName: current.fullName,
+          email: current.email,
+          avatarUrl: current.avatarUrl,
+          provider: current.provider,
+          role: current.role,
+          status: 1, // Locked / Deactivated
+          lastLoginAt: current.lastLoginAt,
+          createdAt: current.createdAt,
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+        _applyFiltersAndSearch();
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã vô hiệu hóa tài khoản ${current.fullName}'),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể vô hiệu hóa tài khoản: $e'),
+          backgroundColor: const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _togglingUserIds.remove(user.id));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final palette = AdminPalette(context);
@@ -343,12 +422,19 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           const SizedBox(width: 10),
           isToggling
               ? const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
-              : IconButton.filledTonal(
-                  tooltip: user.status == 0 ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
-                  onPressed: () => _toggleUserStatus(user),
-                  icon: Icon(user.status == 0 ? Icons.lock_open_rounded : Icons.lock_rounded),
-                  color: user.status == 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
-                ),
+              : user.status == 1
+                  ? IconButton.filledTonal(
+                      tooltip: 'Mở khóa tài khoản',
+                      onPressed: () => _toggleUserStatus(user),
+                      icon: const Icon(Icons.lock_open_rounded),
+                      color: const Color(0xFF16A34A),
+                    )
+                  : IconButton.filledTonal(
+                      tooltip: 'Vô hiệu hóa tài khoản',
+                      onPressed: () => _confirmDeactivateUser(user),
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      color: const Color(0xFFDC2626),
+                    ),
         ],
       ),
     );
