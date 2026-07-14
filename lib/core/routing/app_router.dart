@@ -140,10 +140,9 @@ class MainNavigationScaffold extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/trends')) return 0;
-    if (location.startsWith('/export')) return 1;
-    if (location.startsWith('/papers')) return 2;
-    if (location.startsWith('/notifications')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/papers')) return 1;
+    if (location.startsWith('/notifications')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -153,15 +152,12 @@ class MainNavigationScaffold extends StatelessWidget {
         context.go('/trends');
         break;
       case 1:
-        context.go('/export');
-        break;
-      case 2:
         context.go('/papers');
         break;
-      case 3:
+      case 2:
         context.go('/notifications');
         break;
-      case 4:
+      case 3:
         context.go('/profile');
         break;
     }
@@ -192,11 +188,6 @@ class MainNavigationScaffold extends StatelessWidget {
               icon: Icon(Icons.dashboard_outlined),
               activeIcon: Icon(Icons.dashboard),
               label: 'Trends',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.file_download_outlined),
-              activeIcon: Icon(Icons.file_download),
-              label: 'Export',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.library_books_outlined),

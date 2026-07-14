@@ -45,6 +45,15 @@ class TrendRepository {
     return savePath;
   }
 
+  // Hỗ trợ Web: tải data dưới dạng bytes để gọi trình duyệt lưu file
+  Future<List<int>> getReportBytes(String keywordId) async {
+    final response = await dio.get(
+      '$baseUrl/reports/export?keywordId=$keywordId',
+      options: Options(responseType: ResponseType.bytes),
+    );
+    return response.data;
+  }
+
   // 6. GET /api/trends/journals/{id}
   Future<JournalTrendDto> getJournalTrend(String journalId) async {
     final response = await dio.get('$baseUrl/journals/$journalId');

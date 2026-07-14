@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
 import '../../data/repositories/trend_repository.dart';
@@ -76,6 +77,10 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: textColor),
         actions: [
+          IconButton(
+            icon: Icon(Icons.file_download_outlined, color: textColor),
+            onPressed: () => context.push('/export'),
+          ),
           IconButton(
             icon: Icon(Icons.refresh, color: textColor),
             onPressed: _loadInitialData,
