@@ -3,7 +3,7 @@ import '../../data/models/paper_summary_dto.dart';
 import '../../data/models/paper_filter_dto.dart';
 import '../../data/services/paper_api_service.dart';
 import '../../../../core/storage/token_storage.dart';
-import '../../user/profile/data/services/user_api_service.dart';
+import '../../../user/profile/data/services/user_api_service.dart';
 import '../widgets/paper_card.dart';
 import 'paper_detail_screen.dart';
 
