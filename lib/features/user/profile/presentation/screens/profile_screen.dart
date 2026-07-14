@@ -613,7 +613,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const BookmarksScreen()),
-            );
+            ).then((_) => _loadProfileData());
           },
           child: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -626,7 +626,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: dividerColor,
                 ),
                 _buildStatItem(Icons.star, '$_followCount', 'Followed Topics'),
-                const Spacer(),
+                const SizedBox(width: 8),
                 Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? Colors.white30 : Colors.black38),
               ],
             ),
@@ -648,22 +648,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Icon(icon, color: Colors.purpleAccent, size: 24),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: GoogleFonts.inter(
-                  fontSize: 18, 
-                  fontWeight: FontWeight.bold, 
-                  color: textColor
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  value,
+                  style: GoogleFonts.inter(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold, 
+                    color: textColor
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              Text(
-                label,
-                style: GoogleFonts.inter(fontSize: 11, color: textColorSecondary),
-              ),
-            ],
+                Text(
+                  label,
+                  style: GoogleFonts.inter(fontSize: 11, color: textColorSecondary),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),

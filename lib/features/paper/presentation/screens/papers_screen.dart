@@ -8,7 +8,14 @@ import '../widgets/paper_card.dart';
 import 'paper_detail_screen.dart';
 
 class PapersScreen extends StatefulWidget {
-  const PapersScreen({Key? key}) : super(key: key);
+  final String? initialKeyword;
+  final String? initialJournalId;
+
+  const PapersScreen({
+    Key? key,
+    this.initialKeyword,
+    this.initialJournalId,
+  }) : super(key: key);
 
   @override
   _PapersScreenState createState() => _PapersScreenState();
@@ -26,6 +33,7 @@ class _PapersScreenState extends State<PapersScreen> {
   int _currentPage = 1;
   int _totalPages = 1;
   String _currentKeyword = '';
+  String? _currentJournalId;
   
   int? _userRole;
 
@@ -45,6 +53,13 @@ class _PapersScreenState extends State<PapersScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialKeyword != null) {
+      _currentKeyword = widget.initialKeyword!;
+      _searchController.text = _currentKeyword;
+    }
+    if (widget.initialJournalId != null) {
+      _currentJournalId = widget.initialJournalId;
+    }
     _loadUserRole();
     _fetchBookmarks();
     _fetchPapers();
@@ -114,6 +129,7 @@ class _PapersScreenState extends State<PapersScreen> {
         keyword: _currentKeyword,
         year: _selectedYear,
         source: _selectedSource,
+        journalId: _currentJournalId,
         page: pageToFetch,
         pageSize: 10,
       );
@@ -140,6 +156,7 @@ class _PapersScreenState extends State<PapersScreen> {
 
   void _onSearch(String keyword) {
     _currentKeyword = keyword;
+    _currentJournalId = null; // Clear journal filter when searching from search bar
     _fetchPapers(targetPage: 1);
   }
 
@@ -221,13 +238,23 @@ class _PapersScreenState extends State<PapersScreen> {
     final headerBg = isDark ? const Color(0xFF16161E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1D1E);
     final searchBg = isDark ? Colors.white.withOpacity(0.05) : const Color(0xFFF1F3F5);
+    final canPop = Navigator.canPop(context);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+      padding: EdgeInsets.fromLTRB(20, canPop ? 10 : 20, 20, 10),
       color: headerBg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (canPop) ...[
+            IconButton(
+              icon: Icon(Icons.arrow_back, color: textColor),
+              onPressed: () => Navigator.pop(context),
+              padding: EdgeInsets.zero,
+              alignment: Alignment.centerLeft,
+            ),
+            const SizedBox(height: 8),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
