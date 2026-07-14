@@ -139,10 +139,11 @@ class UserApiService {
   }
 
   // 9. POST /api/users/follows/keywords/{keywordId}
-  Future<void> followKeyword(String keywordId) async {
+  Future<void> followKeyword(String keywordId, {String? targetName}) async {
     try {
       await _dio.post(
         '${ApiConfig.userUrl}/api/users/follows/keywords/$keywordId',
+        queryParameters: targetName != null ? {'target_name': targetName} : null,
       );
     } on DioException catch (e) {
       throw Exception('Failed to follow keyword: ${e.response?.data ?? e.message}');
@@ -150,10 +151,11 @@ class UserApiService {
   }
 
   // 10. POST /api/users/follows/journals/{journalId}
-  Future<void> followJournal(String journalId) async {
+  Future<void> followJournal(String journalId, {String? targetName}) async {
     try {
       await _dio.post(
         '${ApiConfig.userUrl}/api/users/follows/journals/$journalId',
+        queryParameters: targetName != null ? {'target_name': targetName} : null,
       );
     } on DioException catch (e) {
       throw Exception('Failed to follow journal: ${e.response?.data ?? e.message}');

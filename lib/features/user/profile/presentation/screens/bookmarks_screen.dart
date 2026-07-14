@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../data/services/user_api_service.dart';
 import '../../data/models/user_models.dart';
+import '../../../../paper/presentation/screens/paper_detail_screen.dart';
+import '../../../../paper/presentation/screens/papers_screen.dart';
 
 class BookmarksScreen extends StatefulWidget {
   const BookmarksScreen({super.key});
@@ -125,11 +127,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               setState(() {
                 _followedKeywords.insert(index, removed);
               });
-              try {
-                await _apiService.followKeyword(removed.targetId);
-              } catch (e) {
-                debugPrint('Failed to re-follow keyword: $e');
-              }
+               try {
+                 await _apiService.followKeyword(removed.targetId, targetName: removed.targetName);
+               } catch (e) {
+                 debugPrint('Failed to re-follow keyword: $e');
+               }
             },
           ),
         ),
@@ -162,11 +164,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               setState(() {
                 _followedJournals.insert(index, removed);
               });
-              try {
-                await _apiService.followJournal(removed.targetId);
-              } catch (e) {
-                debugPrint('Failed to re-follow journal: $e');
-              }
+               try {
+                 await _apiService.followJournal(removed.targetId, targetName: removed.targetName);
+               } catch (e) {
+                 debugPrint('Failed to re-follow journal: $e');
+               }
             },
           ),
         ),
@@ -280,69 +282,79 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
         final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
         final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
 
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        paper.entityTitle,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaperDetailScreen(paperId: paper.entityId),
+              ),
+            ).then((_) => _loadData());
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          paper.entityTitle,
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.bookmark, color: Colors.purpleAccent),
-                      onPressed: () => _removeBookmark(index),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  paper.note ?? 'No details available',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(color: textColorSecondary, fontSize: 13),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blueAccent.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
+                      IconButton(
+                        icon: const Icon(Icons.bookmark, color: Colors.purpleAccent),
+                        onPressed: () => _removeBookmark(index),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
                       ),
-                      child: Text(
-                        paper.entityType.toUpperCase(),
-                        style: GoogleFonts.inter(fontSize: 10, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    paper.note ?? 'No details available',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(color: textColorSecondary, fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blueAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.blueAccent.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          paper.entityType.toUpperCase(),
+                          style: GoogleFonts.inter(fontSize: 10, color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Saved on ${_formatDate(paper.createdAt)}',
-                      style: GoogleFonts.inter(fontSize: 12, color: textColorTertiary),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'Saved on ${_formatDate(paper.createdAt)}',
+                        style: GoogleFonts.inter(fontSize: 12, color: textColorTertiary),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -353,7 +365,6 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
   Widget _buildFollowsTab() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
-    final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
     final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
 
     return SingleChildScrollView(
@@ -381,17 +392,31 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               runSpacing: 8.0,
               children: List.generate(_followedKeywords.length, (index) {
                 final keyword = _followedKeywords[index];
-                return InputChip(
-                  label: Text(keyword.targetName),
-                  backgroundColor: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
-                  labelStyle: GoogleFonts.inter(color: textColor, fontSize: 13),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
-                  ),
-                  deleteIcon: Icon(Icons.cancel, size: 16, color: textColorSecondary),
-                  onDeleted: () => _unfollowKeyword(index),
-                );
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final itemTextColor = isDark ? Colors.white : Colors.black87;
+                final itemTextColorSecondary = isDark ? Colors.white70 : Colors.black54;
+                final displayName = keyword.targetName.trim().isNotEmpty
+                    ? keyword.targetName.trim()
+                    : 'Topic ${keyword.targetId}';
+                 return InputChip(
+                   label: Text(displayName),
+                   onPressed: () {
+                     Navigator.push(
+                       context,
+                       MaterialPageRoute(
+                         builder: (context) => PapersScreen(initialKeyword: displayName),
+                       ),
+                     );
+                   },
+                   backgroundColor: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03),
+                   labelStyle: GoogleFonts.inter(color: itemTextColor, fontSize: 13),
+                   shape: RoundedRectangleBorder(
+                     borderRadius: BorderRadius.circular(8),
+                     side: BorderSide(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                   ),
+                   deleteIcon: Icon(Icons.cancel, size: 16, color: itemTextColorSecondary),
+                   onDeleted: () => _unfollowKeyword(index),
+                 );
               }),
             ),
           const SizedBox(height: 32),
@@ -416,41 +441,59 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final journal = _followedJournals[index];
-                final abbr = journal.targetName.length >= 3 
-                    ? journal.targetName.substring(0, 3).toUpperCase() 
-                    : journal.targetName.toUpperCase();
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.purpleAccent.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          abbr,
-                          style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purpleAccent),
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                final itemTextColor = isDark ? Colors.white : Colors.black87;
+                final displayName = journal.targetName.trim().isNotEmpty
+                    ? journal.targetName.trim()
+                    : 'Journal ${journal.targetId}';
+                final abbr = displayName.length >= 3 
+                    ? displayName.substring(0, 3).toUpperCase() 
+                    : displayName.toUpperCase();
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PapersScreen(
+                          initialJournalId: journal.targetId,
+                          initialKeyword: displayName,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          journal.targetName,
-                          style: GoogleFonts.inter(fontSize: 14, color: textColor, fontWeight: FontWeight.w500),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.purpleAccent.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            abbr,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.purpleAccent),
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.star, color: Colors.purpleAccent),
-                        onPressed: () => _unfollowJournal(index),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            displayName,
+                            style: GoogleFonts.inter(fontSize: 14, color: itemTextColor, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.star, color: Colors.purpleAccent),
+                          onPressed: () => _unfollowJournal(index),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
