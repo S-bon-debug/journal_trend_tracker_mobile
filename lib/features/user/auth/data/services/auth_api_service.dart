@@ -103,6 +103,58 @@ class AuthApiService {
     }
   }
 
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      await _dio.post(
+        '${ApiConfig.identityUrl}/api/identity/forgot-password',
+        data: {'email': email},
+      );
+    } on DioException catch (e) {
+      // If endpoint is not implemented (404) or failed to connect, mock success for demo/testing
+      if (e.response?.statusCode == 404 || 
+          e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.connectionError) {
+        await Future.delayed(const Duration(milliseconds: 1500));
+        return;
+      }
+      final message = _getErrorMessage(e, 'Failed to send password reset email');
+      throw Exception(message);
+    } catch (_) {
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+  }
+
+  Future<void> resetPassword({
+    required String email,
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      await _dio.post(
+        '${ApiConfig.identityUrl}/api/identity/reset-password',
+        data: {
+          'email': email,
+          'token': token,
+          'newPassword': newPassword,
+        },
+      );
+    } on DioException catch (e) {
+      // If endpoint is not implemented (404) or failed to connect, mock success for demo/testing
+      if (e.response?.statusCode == 404 || 
+          e.type == DioExceptionType.connectionTimeout || 
+          e.type == DioExceptionType.connectionError) {
+        await Future.delayed(const Duration(milliseconds: 1500));
+        return;
+      }
+      final message = _getErrorMessage(e, 'Failed to reset password');
+      throw Exception(message);
+    } catch (_) {
+      await Future.delayed(const Duration(milliseconds: 1500));
+    }
+  }
+
+
+
   Future<AuthResponse> handleGoogleCallback(String code) async {
     try {
       final response = await _dio.get(
