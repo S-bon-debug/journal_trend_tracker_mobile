@@ -1,7 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
@@ -18,12 +18,11 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   late TrendRepository _repository;
   
   Future<TrendOverviewDto>? _overviewFuture;
-  Future<List<HotTopicDto>>? _hotTopicsFuture;
+  Future<List<TopTopicDto>>? _hotTopicsFuture;
   Future<List<TopAuthorDto>>? _topAuthorsFuture;
   Future<List<JournalTrendSummaryDto>>? _topJournalsFuture;
   Future<List<TopKeywordDto>>? _topKeywordsFuture;
 
-  // Trạng thái theo dõi biểu đồ
   Future<KeywordTrendDto>? _trendFuture;
   String? _selectedKeywordId;
 
@@ -68,13 +67,28 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
+    
+    // Background gradient for a modern feel
+    final bgGradient = LinearGradient(
+      colors: isDark 
+        ? [const Color(0xFF0F172A), const Color(0xFF1E293B)] 
+        : [const Color(0xFFF8FAFC), const Color(0xFFE2E8F0)],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    );
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Trends Dashboard', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
+        title: Text('Analytics Dashboard', style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: textColor, letterSpacing: -0.5)),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: (isDark ? Colors.black : Colors.white).withOpacity(0.5)),
+          ),
+        ),
         iconTheme: IconThemeData(color: textColor),
         actions: [
           IconButton(
@@ -82,68 +96,95 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
             onPressed: () => context.push('/export'),
           ),
           IconButton(
-            icon: Icon(Icons.refresh, color: textColor),
+            icon: Icon(Icons.refresh_rounded, color: textColor),
             onPressed: _loadInitialData,
           )
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildOverviewSection(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Publication Trends'),
-            const SizedBox(height: 16),
-            _buildTrendChartSection(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Top 10 Keywords'),
-            const SizedBox(height: 16),
-            _buildTopKeywordsSection(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Trending Research Topics'),
-            const SizedBox(height: 16),
-            _buildTrendingTopicsSection(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Top Authors'),
-            const SizedBox(height: 16),
-            _buildTopAuthorsSection(),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Top Journals'),
-            const SizedBox(height: 16),
-            _buildTopJournalsSection(),
-            const SizedBox(height: 24),
-          ],
+      body: Container(
+        decoration: BoxDecoration(gradient: bgGradient),
+        child: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1200),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildOverviewSection(),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Publication Trend Analysis', Icons.insights_rounded),
+                    const SizedBox(height: 16),
+                    _buildTrendChartSection(),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Trending Research Topics', Icons.local_fire_department_rounded, color: Colors.orangeAccent),
+                    const SizedBox(height: 16),
+                    _buildTrendingTopicsSection(),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Top 10 Keywords', Icons.tag_rounded),
+                    const SizedBox(height: 16),
+                    _buildTopKeywordsSection(),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Leading Authors', Icons.school_rounded),
+                    const SizedBox(height: 16),
+                    _buildTopAuthorsSection(),
+                    const SizedBox(height: 32),
+                    _buildSectionTitle('Top Journals', Icons.menu_book_rounded),
+                    const SizedBox(height: 16),
+                    _buildTopJournalsSection(),
+                    const SizedBox(height: 48),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(String title, IconData icon, {Color? color}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Text(
-      title,
-      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600, color: isDark ? Colors.white : Colors.black87),
+    return Row(
+      children: [
+        Icon(icon, size: 22, color: color ?? (isDark ? Colors.blueAccent : Colors.blue)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: isDark ? Colors.white : Colors.black87),
+        ),
+      ],
     );
   }
 
+  // --- OVERVIEW SECTION ---
   Widget _buildOverviewSection() {
     return FutureBuilder<TrendOverviewDto>(
       future: _overviewFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Text('Error loading overview: ${snapshot.error}', style: const TextStyle(color: Colors.red));
         } else if (snapshot.hasData) {
           final data = snapshot.data!;
-          return Row(
-            children: [
-              Expanded(child: _buildStatCard('Total Papers', '${data.totalPapers}', Colors.blueAccent)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildStatCard('Total Authors', '${data.totalAuthors}', Colors.purpleAccent)),
-            ],
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 800;
+              return GridView.count(
+                crossAxisCount: isWide ? 4 : 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                childAspectRatio: isWide ? 2.0 : 1.5,
+                children: [
+                  _buildStatCard('Total Papers', '${data.totalPapers}', Icons.article_rounded, const [Color(0xFF3B82F6), Color(0xFF2563EB)]),
+                  _buildStatCard('Authors', '${data.totalAuthors}', Icons.people_rounded, const [Color(0xFF8B5CF6), Color(0xFF7C3AED)]),
+                  _buildStatCard('Keywords', '${data.totalKeywords}', Icons.tag_rounded, const [Color(0xFF10B981), Color(0xFF059669)]),
+                  _buildStatCard('Journals', '${data.totalJournals}', Icons.menu_book_rounded, const [Color(0xFFF59E0B), Color(0xFFD97706)]),
+                ],
+              );
+            }
           );
         }
         return const SizedBox.shrink();
@@ -151,82 +192,89 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, Color color) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildStatCard(String title, String value, IconData icon, List<Color> gradientColors) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08)),
+        gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: gradientColors[1].withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
       ),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black54, fontSize: 14)),
-          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(icon, color: Colors.white70, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const Spacer(),
           Text(
             value,
-            style: GoogleFonts.inter(color: color, fontSize: 24, fontWeight: FontWeight.bold),
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
           ),
         ],
       ),
     );
   }
 
+  // --- CHART SECTION ---
   Widget _buildTrendChartSection() {
     return FutureBuilder<KeywordTrendDto>(
       key: ValueKey(_selectedKeywordId ?? 'default'),
       future: _trendFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(height: 300, child: Center(child: CircularProgressIndicator()));
-        } else if (snapshot.hasError) {
-          return SizedBox(height: 300, child: Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red))));
+          return const SizedBox(height: 320, child: Center(child: CircularProgressIndicator()));
         } else if (snapshot.hasData) {
           final trend = snapshot.data!;
           if (trend.stats.isEmpty) {
-            return const SizedBox(height: 300, child: Center(child: Text('No trend data available.', style: TextStyle(color: Colors.white))));
+            return const SizedBox(height: 320, child: Center(child: Text('No data')));
           }
           
           final spots = trend.stats.map((e) => FlSpot(e.year.toDouble(), e.paperCount.toDouble())).toList();
-          
           final isDark = Theme.of(context).brightness == Brightness.dark;
-          final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03);
-          final cardBorderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.08);
-          final labelColor = isDark ? Colors.white54 : Colors.black45;
+          final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+          final borderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
           
           return Container(
-            height: 300,
-            padding: const EdgeInsets.all(16),
+            height: 340,
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: cardBorderColor),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: borderColor),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(trend.keywordTerm, style: GoogleFonts.inter(color: Colors.purpleAccent, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(trend.keywordTerm, style: GoogleFonts.inter(fontSize: 16, color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                      child: Text('Keyword Trend', style: GoogleFonts.inter(fontSize: 11, color: Colors.blueAccent, fontWeight: FontWeight.w600)),
+                    )
+                  ],
+                ),
+                const SizedBox(height: 32),
                 Expanded(
                   child: LineChart(
                     LineChartData(
-                      gridData: const FlGridData(show: false),
+                      gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (value) => FlLine(color: isDark ? Colors.white10 : Colors.black12, strokeWidth: 1)),
                       titlesData: FlTitlesData(
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 40,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: labelColor, fontSize: 10)),
-                          )
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: labelColor, fontSize: 10)),
-                          )
-                        ),
+                        leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 40, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: Colors.grey, fontSize: 10)))),
+                        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) => Text(value.toInt().toString(), style: GoogleFonts.inter(color: Colors.grey, fontSize: 10)))),
                         rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                       ),
@@ -235,10 +283,18 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                         LineChartBarData(
                           spots: spots,
                           isCurved: true,
-                          color: Colors.purpleAccent,
+                          color: Colors.blueAccent,
                           barWidth: 4,
-                          belowBarData: BarAreaData(show: true, color: Colors.purpleAccent.withOpacity(0.2)),
+                          isStrokeCapRound: true,
                           dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            gradient: LinearGradient(
+                              colors: [Colors.blueAccent.withOpacity(0.5), Colors.blueAccent.withOpacity(0.0)],
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -253,75 +309,58 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     );
   }
 
-  Widget _buildTopKeywordsSection() {
-    return FutureBuilder<List<TopKeywordDto>>(
-      future: _topKeywordsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 8.0,
-                runSpacing: 8.0,
-                children: snapshot.data!.map((keyword) {
-                  final isSelected = _selectedKeywordId == keyword.keywordId;
-                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                  return ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isSelected ? Colors.purpleAccent : (isDark ? Colors.grey[800] : Colors.grey[300]),
-                      foregroundColor: isSelected ? Colors.white : (isDark ? Colors.white : Colors.black87),
-                      elevation: isSelected ? 4 : 0,
-                    ),
-                    onPressed: () {
-                      _onKeywordSelected(keyword.keywordId);
-                    },
-                    child: Text(keyword.keywordTerm),
-                  );
-                }).toList(),
-              ),
-            ],
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
+  // --- TRENDING TOPICS ---
   Widget _buildTrendingTopicsSection() {
-    return FutureBuilder<List<HotTopicDto>>(
+    return FutureBuilder<List<TopTopicDto>>(
       future: _hotTopicsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Text('Error loading topics: ${snapshot.error}', style: const TextStyle(color: Colors.red));
         } else if (snapshot.hasData) {
           final topics = snapshot.data!;
           return Column(
             children: topics.map((topic) {
               final isDark = Theme.of(context).brightness == Brightness.dark;
+              final growth = topic.growthRate ?? 0.0;
+              final isPositive = growth >= 0;
+              
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05)),
+                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.trending_up, color: Colors.greenAccent),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: (isPositive ? Colors.green : Colors.red).withOpacity(0.1), shape: BoxShape.circle),
+                      child: Icon(isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded, color: isPositive ? Colors.green : Colors.red, size: 20),
+                    ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
-                        topic.query,
-                        style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontSize: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(topic.topicName, style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontSize: 15, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 4),
+                          Text('${topic.paperCount} recent publications', style: GoogleFonts.inter(color: Colors.grey, fontSize: 12)),
+                        ],
                       ),
                     ),
-                    Text('${topic.searchCount} searches', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${isPositive ? '+' : ''}${growth.toStringAsFixed(1)}%',
+                          style: GoogleFonts.inter(color: isPositive ? Colors.green : Colors.red, fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        Text('Growth', style: GoogleFonts.inter(color: Colors.grey, fontSize: 10)),
+                      ],
+                    ),
                   ],
                 ),
               );
@@ -333,6 +372,49 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     );
   }
 
+  // --- KEYWORDS ---
+  Widget _buildTopKeywordsSection() {
+    return FutureBuilder<List<TopKeywordDto>>(
+      future: _topKeywordsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          return Wrap(
+            spacing: 10.0,
+            runSpacing: 10.0,
+            children: snapshot.data!.map((keyword) {
+              final isSelected = _selectedKeywordId == keyword.keywordId;
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              return InkWell(
+                onTap: () => _onKeywordSelected(keyword.keywordId),
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSelected ? Colors.blueAccent : (isDark ? Colors.white.withOpacity(0.08) : Colors.white),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isSelected ? Colors.blueAccent : (isDark ? Colors.white24 : Colors.black12)),
+                    boxShadow: isSelected ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                  ),
+                  child: Text(
+                    keyword.keywordTerm,
+                    style: GoogleFonts.inter(
+                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  // --- AUTHORS ---
   Widget _buildTopAuthorsSection() {
     return FutureBuilder<List<TopAuthorDto>>(
       future: _topAuthorsFuture,
@@ -341,33 +423,36 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
           return SizedBox(
-            height: 140,
+            height: 160,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: snapshot.data!.length,
+              clipBehavior: Clip.none,
               itemBuilder: (context, index) {
                 final author = snapshot.data![index];
                 final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
-                  width: 200,
-                  margin: const EdgeInsets.only(right: 12),
+                  width: 180,
+                  margin: const EdgeInsets.only(right: 16, bottom: 10),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
                   ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       CircleAvatar(
-                        backgroundColor: Colors.blueAccent.withOpacity(0.2),
-                        child: Text(author.name[0], style: const TextStyle(color: Colors.blueAccent)),
+                        radius: 28,
+                        backgroundColor: Colors.purpleAccent.withOpacity(0.2),
+                        child: Text(author.name[0], style: GoogleFonts.inter(color: Colors.purpleAccent, fontSize: 20, fontWeight: FontWeight.bold)),
                       ),
-                      const Spacer(),
-                      Text(author.name, style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 12),
+                      Text(author.name, style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w700, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 4),
-                      Text('${author.paperCount} papers', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
+                      Text('${author.paperCount} Publications', style: GoogleFonts.inter(color: Colors.grey, fontSize: 11)),
                     ],
                   ),
                 );
@@ -380,6 +465,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     );
   }
 
+  // --- JOURNALS ---
   Widget _buildTopJournalsSection() {
     return FutureBuilder<List<JournalTrendSummaryDto>>(
       future: _topJournalsFuture,
@@ -387,32 +473,43 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          return Column(
-            children: snapshot.data!.map((journal) {
-              final isDark = Theme.of(context).brightness == Brightness.dark;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.03),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.book, color: Colors.orangeAccent),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Text(
-                        journal.journalName,
-                        style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontSize: 14),
+          return SizedBox(
+            height: 150,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: snapshot.data!.length,
+              clipBehavior: Clip.none,
+              itemBuilder: (context, index) {
+                final journal = snapshot.data![index];
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return Container(
+                  width: 220,
+                  margin: const EdgeInsets.only(right: 16, bottom: 10),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Icon(Icons.library_books_rounded, color: Colors.orangeAccent.withOpacity(0.8), size: 28),
+                      Text(journal.journalName, style: GoogleFonts.inter(color: isDark ? Colors.white : Colors.black87, fontWeight: FontWeight.w600, fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Year: ${journal.year}', style: GoogleFonts.inter(color: Colors.grey, fontSize: 11)),
+                          Text('${journal.paperCount} Papers', style: GoogleFonts.inter(color: Colors.orangeAccent, fontSize: 12, fontWeight: FontWeight.bold)),
+                        ],
                       ),
-                    ),
-                    Text('${journal.paperCount} papers', style: GoogleFonts.inter(color: isDark ? Colors.white54 : Colors.black54, fontSize: 12)),
-                  ],
-                ),
-              );
-            }).toList(),
+                    ],
+                  ),
+                );
+              },
+            ),
           );
         }
         return const SizedBox.shrink();
