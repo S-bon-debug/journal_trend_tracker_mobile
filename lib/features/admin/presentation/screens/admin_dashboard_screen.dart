@@ -18,18 +18,15 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> with SingleTickerProviderStateMixin {
   final AdminApiService _apiService = AdminApiService();
-  final Map<String, TextEditingController> _settingControllers = {};
 
   late TabController _tabController;
   bool _isLoading = true;
-  bool _isSavingSettings = false;
   String? _error;
 
   int _activeSourcesCount = 0;
   int _totalJobsCount = 0;
   int _totalUsersCount = 0;
   int _lockedUsersCount = 0;
-  List<SystemSettingDto> _settings = [];
   List<AuditLogDto> _logs = [];
 
   @override
@@ -42,9 +39,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
   @override
   void dispose() {
     _tabController.dispose();
-    for (final controller in _settingControllers.values) {
-      controller.dispose();
-    }
     super.dispose();
   }
 
@@ -58,16 +52,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       final users = await _apiService.getUsers();
       final sources = await _apiService.getApiSources();
       final jobs = await _apiService.getSyncJobs();
-      final settings = await _apiService.getSettings();
       final logs = await _apiService.getLogs();
 
-      for (final setting in settings) {
-        _settingControllers.putIfAbsent(setting.key, () => TextEditingController());
-        _settingControllers[setting.key]!.text = setting.value;
-      }
-
       setState(() {
-        _settings = settings;
         _logs = logs;
         _activeSourcesCount = sources.where((s) => s.isActive).length;
         _totalJobsCount = jobs.length;
@@ -83,40 +70,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     }
   }
 
-  Future<void> _saveSettings() async {
-    setState(() => _isSavingSettings = true);
-    try {
-      final updatedSettings = _settings.map((setting) {
-        return SystemSettingDto(
-          key: setting.key,
-          value: _settingControllers[setting.key]?.text ?? setting.value,
-          description: setting.description,
-          updatedBy: setting.updatedBy,
-          updatedAt: DateTime.now().toIso8601String(),
-        );
-      }).toList();
 
-      final success = await _apiService.updateSettings(updatedSettings);
-      if (success) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Đã lưu cấu hình hệ thống'),
-            backgroundColor: Color(0xFF16A34A),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        await _loadDashboardData();
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không lưu được cấu hình: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
-      );
-    } finally {
-      if (mounted) setState(() => _isSavingSettings = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,31 +131,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        AdminSurface(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.admin_panel_settings_outlined, color: AppTheme.primaryColor),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Bảng điều khiển vận hành', style: GoogleFonts.outfit(fontSize: 21, fontWeight: FontWeight.w800, color: palette.text)),
-                    const SizedBox(height: 4),
-                    Text('Theo dõi người dùng, nguồn dữ liệu, cấu hình và lịch sử thay đổi trong một nơi.', style: GoogleFonts.inter(fontSize: 13, height: 1.4, color: palette.muted)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
             final count = constraints.maxWidth >= 760 ? 4 : 2;
@@ -247,10 +176,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        Text('Cấu hình hệ thống', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
-        const SizedBox(height: 10),
-        _buildSettings(palette),
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -280,67 +206,61 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   Widget _shortcutCard({required String title, required String description, required IconData icon, required Color color, required VoidCallback onTap}) {
     final palette = AdminPalette(context);
-    return AdminSurface(
-      onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color, size: 26),
-          const SizedBox(height: 10),
-          Text(title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: palette.text)),
-          const SizedBox(height: 4),
-          Text(description, maxLines: 3, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, height: 1.35, color: palette.muted)),
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(palette.isDark ? 0.08 : 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSettings(AdminPalette palette) {
-    return AdminSurface(
-      child: Column(
-        children: [
-          for (final setting in _settings) ...[
-            _settingField(setting, palette),
-            if (setting != _settings.last) Divider(height: 22, color: palette.border),
-          ],
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _isSavingSettings ? null : _saveSettings,
-              icon: _isSavingSettings
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save_outlined),
-              label: Text(_isSavingSettings ? 'Đang lưu...' : 'Lưu cấu hình'),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 22),
+                    ),
+                    Icon(Icons.arrow_forward_rounded, size: 16, color: color.withOpacity(0.8)),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Text(title, style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w800, color: palette.text)),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 11.5, height: 1.4, color: palette.muted),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _settingField(SystemSettingDto setting, AdminPalette palette) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(_settingTitle(setting.key), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: palette.text)),
-        if (setting.description != null && setting.description!.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          Text(setting.description!, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
-        ],
-        const SizedBox(height: 8),
-        TextField(
-          controller: _settingControllers[setting.key],
-          style: GoogleFonts.inter(color: palette.text),
-          decoration: InputDecoration(
-            hintText: setting.key,
-            prefixIcon: const Icon(Icons.tune),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildLogs(AdminPalette palette) {
     if (_logs.isEmpty) {
@@ -407,18 +327,4 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return AppTheme.primaryColor;
   }
 
-  String _settingTitle(String key) {
-    switch (key) {
-      case 'max_search_results':
-        return 'Số kết quả tìm kiếm tối đa';
-      case 'trend_snapshot_schedule':
-        return 'Lịch tạo snapshot xu hướng';
-      case 'email_from':
-        return 'Email gửi thông báo';
-      case 'sync_fields':
-        return 'Lĩnh vực đồng bộ';
-      default:
-        return key.replaceAll('_', ' ');
-    }
-  }
 }

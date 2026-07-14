@@ -488,39 +488,68 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         DropdownMenuItem(value: 2, child: Text('Chờ duyệt')),
       ];
 
+  Widget _getProviderPill(int provider) {
+    switch (provider) {
+      case 1:
+        return const AdminStatusPill(label: 'Google', color: Color(0xFFEA4335), icon: Icons.g_mobiledata_rounded);
+      case 2:
+        return const AdminStatusPill(label: 'GitHub', color: Color(0xFF9E9E9E), icon: Icons.code_rounded);
+      default:
+        return const AdminStatusPill(label: 'Email', color: Color(0xFF8B5CF6), icon: Icons.mail_outline_rounded);
+    }
+  }
+
   Widget _buildUserCard(AdminUserDto user, AdminPalette palette) {
     final isToggling = _togglingUserIds.contains(user.id);
+    final roleColor = _getRoleColor(user.role);
     return AdminSurface(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       child: Row(
         children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: _getRoleColor(user.role).withOpacity(0.14),
-            backgroundImage: user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
-            child: user.avatarUrl == null
-                ? Text(
-                    _initials(user.fullName),
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: _getRoleColor(user.role)),
-                  )
-                : null,
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: roleColor.withOpacity(0.35), width: 1.5),
+            ),
+            child: CircleAvatar(
+              radius: 23,
+              backgroundColor: roleColor.withOpacity(0.12),
+              backgroundImage: user.avatarUrl == null ? null : NetworkImage(user.avatarUrl!),
+              child: user.avatarUrl == null
+                  ? Text(
+                      _initials(user.fullName),
+                      style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: roleColor, fontSize: 15),
+                    )
+                  : null,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(user.fullName, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: palette.text)),
+                Text(
+                  user.fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.outfit(fontSize: 15.5, fontWeight: FontWeight.w800, color: palette.text),
+                ),
                 const SizedBox(height: 2),
-                Text(user.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
-                const SizedBox(height: 8),
+                Text(
+                  user.email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 11.5, color: palette.muted, fontWeight: FontWeight.w500),
+                ),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    AdminStatusPill(label: _roleLabel(user.role), color: _getRoleColor(user.role)),
+                    AdminStatusPill(label: _roleLabel(user.role), color: roleColor),
                     AdminStatusPill(label: _statusLabel(user.status), color: _getStatusColor(user.status)),
+                    _getProviderPill(user.provider),
                   ],
                 ),
               ],

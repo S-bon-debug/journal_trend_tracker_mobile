@@ -272,6 +272,26 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     );
   }
 
+  Widget _statusIndicator(bool isActive) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF22C55E) : const Color(0xFF9CA3AF),
+        shape: BoxShape.circle,
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF22C55E).withOpacity(0.5),
+                  blurRadius: 6,
+                  spreadRadius: 2,
+                )
+              ]
+            : null,
+      ),
+    );
+  }
+
   Widget _sourceCard(ApiSourceDto source, AdminPalette palette) {
     final isToggling = _togglingSourceIds.contains(source.id);
     final color = source.isActive ? const Color(0xFF22C55E) : palette.muted;
@@ -289,7 +309,13 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(source.name, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+                    Row(
+                      children: [
+                        Text(source.name, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+                        const SizedBox(width: 8),
+                        _statusIndicator(source.isActive),
+                      ],
+                    ),
                     const SizedBox(height: 2),
                     Text(source.baseUrl, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
                   ],

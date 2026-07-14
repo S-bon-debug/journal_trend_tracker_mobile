@@ -43,8 +43,17 @@ class AdminSurface extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: palette.card,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: palette.border),
+        boxShadow: [
+          BoxShadow(
+            color: palette.isDark
+                ? Colors.black.withOpacity(0.35)
+                : Colors.black.withOpacity(0.04),
+            blurRadius: palette.isDark ? 16 : 10,
+            offset: Offset(0, palette.isDark ? 8 : 4),
+          ),
+        ],
       ),
       child: child,
     );
@@ -53,7 +62,7 @@ class AdminSurface extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: content,
       ),
