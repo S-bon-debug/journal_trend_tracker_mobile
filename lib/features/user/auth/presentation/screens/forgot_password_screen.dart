@@ -260,7 +260,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            "Enter the reset token sent to your email and your new password.",
+            "Enter the verification code sent to your email and your new password.",
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium,
           ),
@@ -327,13 +327,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           TextFormField(
             controller: _tokenController,
             decoration: const InputDecoration(
-              labelText: 'Reset Token',
+              labelText: 'Verification Code',
               prefixIcon: Icon(Icons.security_outlined),
-              hintText: 'Enter reset token from email',
+              hintText: 'Enter verification code from email',
             ),
             validator: (val) {
               if (val == null || val.isEmpty) {
-                return 'Please enter the reset token';
+                return 'Please enter the verification code';
               }
               return null;
             },
