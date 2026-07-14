@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:open_filex/open_filex.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
 import '../../data/repositories/trend_repository.dart';
@@ -51,9 +52,14 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Report downloaded successfully! Saved at: $savePath')),
+          SnackBar(
+            content: Text('Report downloaded successfully! Opening file...'),
+            duration: const Duration(seconds: 2),
+          ),
         );
       }
+      
+      await OpenFilex.open(savePath);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
