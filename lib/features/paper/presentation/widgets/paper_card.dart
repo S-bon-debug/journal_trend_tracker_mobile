@@ -5,8 +5,16 @@ import 'dart:math';
 class PaperCard extends StatelessWidget {
   final PaperSummaryDto paper;
   final VoidCallback onTap;
+  final bool isBookmarked;
+  final VoidCallback? onBookmarkToggle;
 
-  const PaperCard({Key? key, required this.paper, required this.onTap}) : super(key: key);
+  const PaperCard({
+    Key? key, 
+    required this.paper, 
+    required this.onTap,
+    this.isBookmarked = false,
+    this.onBookmarkToggle,
+  }) : super(key: key);
 
   Color _getRandomColor(String text) {
     final colors = [
@@ -88,16 +96,33 @@ class PaperCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        paper.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                          color: titleColor,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              paper.title,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                height: 1.4,
+                                color: titleColor,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (onBookmarkToggle != null)
+                            IconButton(
+                              icon: Icon(
+                                isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                                color: isBookmarked ? Colors.blue[700] : (isDark ? Colors.white54 : Colors.grey[400]),
+                              ),
+                              onPressed: onBookmarkToggle,
+                              constraints: const BoxConstraints(),
+                              padding: const EdgeInsets.only(left: 8),
+                            ),
+                        ],
                       ),
                       const SizedBox(height: 8),
                       
@@ -134,19 +159,44 @@ class PaperCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (paper.publicationYear != null)
-                            Row(
-                              children: [
+                          Row(
+                            children: [
+                              if (paper.publicationYear != null) ...[
                                 Icon(Icons.calendar_month, size: 14, color: calendarIconColor),
                                 const SizedBox(width: 4),
                                 Text(
                                   paper.publicationYear.toString(),
                                   style: TextStyle(color: yearColor, fontWeight: FontWeight.w600, fontSize: 13),
                                 ),
+                                const SizedBox(width: 12),
                               ],
-                            )
-                          else
-                            const SizedBox(),
+                              if (paper.source.isNotEmpty)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: paper.source.toLowerCase().contains('openalex') 
+                                        ? Colors.purple.withOpacity(0.1) 
+                                        : Colors.blue.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(4),
+                                    border: Border.all(
+                                      color: paper.source.toLowerCase().contains('openalex')
+                                          ? Colors.purple.withOpacity(0.3)
+                                          : Colors.blue.withOpacity(0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    paper.source,
+                                    style: TextStyle(
+                                      color: paper.source.toLowerCase().contains('openalex')
+                                          ? Colors.purple[700]
+                                          : Colors.blue[700],
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                             
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
