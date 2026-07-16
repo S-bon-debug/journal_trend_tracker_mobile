@@ -54,6 +54,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       final jobs = await _apiService.getSyncJobs();
       final logs = await _apiService.getLogs();
 
+      if (!mounted) return;
+
       setState(() {
         _logs = logs;
         _activeSourcesCount = sources.where((s) => s.isActive).length;
@@ -63,6 +65,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
+      
       setState(() {
         _error = e.toString();
         _isLoading = false;

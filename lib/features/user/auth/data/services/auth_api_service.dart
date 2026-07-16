@@ -92,7 +92,10 @@ class AuthApiService {
       final storage = await TokenStorage.instance;
       final token = storage.getAccessToken();
       if (token != null && token.isNotEmpty) {
-        await _dio.post('${ApiConfig.identityUrl}/api/identity/logout');
+        await _dio.post(
+          '${ApiConfig.identityUrl}/api/identity/logout',
+          data: {},
+        );
       }
     } catch (_) {
       // Ignore network errors on logout, proceed with local logout

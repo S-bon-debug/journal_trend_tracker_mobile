@@ -357,8 +357,8 @@ class _PapersScreenState extends State<PapersScreen> {
                   onSelected: (selected) {
                     setState(() {
                       _selectedYear = year;
-                      _fetchPapers();
                     });
+                    _fetchPapers(targetPage: 1);
                   },
                   backgroundColor: chipBg,
                   selectedColor: Colors.blue[700],
@@ -393,8 +393,8 @@ class _PapersScreenState extends State<PapersScreen> {
                   onSelected: (selected) {
                     setState(() {
                       _selectedSource = source['value'];
-                      _fetchPapers();
                     });
+                    _fetchPapers(targetPage: 1);
                   },
                   backgroundColor: chipBg,
                   selectedColor: isDark ? Colors.purpleAccent : const Color(0xFF343A40),
