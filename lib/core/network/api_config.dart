@@ -39,14 +39,11 @@ class ApiConfig {
   }
 
   static String get adminUrl {
-    if (isProduction) {
-      return 'https://admin-service-924r.onrender.com';
-    } else {
-      if (!kIsWeb && Platform.isAndroid) {
-        return 'http://10.0.2.2:5035';
-      }
-      return 'http://localhost:5035';
+    // Admin service is run locally because Render free tier was suspended
+    if (!kIsWeb && Platform.isAndroid) {
+      return 'http://10.0.2.2:5035';
     }
+    return 'http://localhost:5035';
   }
 
   static String get trendUrl {
