@@ -19,6 +19,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   String _filter = 'All'; // 'All' or 'Unread'
 
+  List<NotificationDto> get _simulatedNotifications => [
+        NotificationDto(
+          id: 'mock_1',
+          type: 'new_paper',
+          title: '[Giả lập] Bài báo mới được xuất bản',
+          body: 'Một bài báo mới phù hợp với từ khóa bạn đang theo dõi "Machine Learning" đã được xuất bản: "Optimizing Neural Network Architectures via Evolutionary Algorithms".',
+          isRead: false,
+          createdAt: DateTime.now().subtract(const Duration(minutes: 10)).toIso8601String(),
+        ),
+        NotificationDto(
+          id: 'mock_2',
+          type: 'sync',
+          title: '[Giả lập] Đồng bộ dữ liệu thành công',
+          body: 'Cơ sở dữ liệu xu hướng tạp chí khoa học đã được cập nhật thành công với 12 xu hướng mới được phân tích.',
+          isRead: false,
+          createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
+        ),
+        NotificationDto(
+          id: 'mock_3',
+          type: 'default',
+          title: '[Giả lập] Cập nhật thông tin hệ thống',
+          body: 'Thông tin tùy chọn nghiên cứu ưu tiên của bạn đã được lưu lại thành công. Bạn sẽ nhận được các bài báo liên quan nhất.',
+          isRead: true,
+          createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
+        ),
+      ];
+
   @override
   void initState() {
     super.initState();
@@ -33,12 +60,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       final list = await _apiService.getNotifications();
       setState(() {
-        _notifications = list;
+        _notifications = [..._simulatedNotifications, ...list];
         _isLoading = false;
       });
     } catch (e) {
+      debugPrint('Failed to load notifications from API: $e');
       setState(() {
-        _error = e.toString();
+        _notifications = _simulatedNotifications;
         _isLoading = false;
       });
     }
@@ -63,10 +91,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _locallyReadIds.add(item.id);
     });
 
-    try {
-      await _apiService.markNotificationAsRead(item.id);
-    } catch (e) {
-      debugPrint('Failed to mark notification as read: $e');
+    if (!item.id.startsWith('mock_')) {
+      try {
+        await _apiService.markNotificationAsRead(item.id);
+      } catch (e) {
+        debugPrint('Failed to mark notification as read: $e');
+      }
     }
 
     // Show details dialog
@@ -137,7 +167,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
 
     try {
-      await _apiService.markAllNotificationsAsRead();
+      final hasRealNotifications = _notifications.any((item) => !item.id.startsWith('mock_'));
+      if (hasRealNotifications) {
+        await _apiService.markAllNotificationsAsRead();
+      }
     } catch (e) {
       debugPrint('Failed to mark all notifications as read: $e');
     }
