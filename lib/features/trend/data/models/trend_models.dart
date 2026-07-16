@@ -63,6 +63,71 @@ class HotTopicDto {
   }
 }
 
+class TopTopicDto {
+  final String topicId;
+  final String topicName;
+  final int paperCount;
+  final double? growthRate;
+
+  TopTopicDto({
+    required this.topicId,
+    required this.topicName,
+    required this.paperCount,
+    this.growthRate,
+  });
+
+  factory TopTopicDto.fromJson(Map<String, dynamic> json) {
+    return TopTopicDto(
+      topicId: json['topicId'] ?? '',
+      topicName: json['topicName'] ?? '',
+      paperCount: json['paperCount'] ?? 0,
+      growthRate: json['growthRate']?.toDouble(),
+    );
+  }
+}
+
+class TopicTrendDto {
+  final String topicId;
+  final String topicName;
+  final List<YearlyStatDto> stats;
+
+  TopicTrendDto({
+    required this.topicId,
+    required this.topicName,
+    required this.stats,
+  });
+
+  factory TopicTrendDto.fromJson(Map<String, dynamic> json) {
+    var statsList = json['stats'] as List? ?? [];
+    return TopicTrendDto(
+      topicId: json['topicId'] ?? '',
+      topicName: json['topicName'] ?? '',
+      stats: statsList.map((e) => YearlyStatDto.fromJson(e)).toList(),
+    );
+  }
+}
+
+class AuthorTrendDto {
+  final String authorId;
+  final String authorName;
+  final List<YearlyStatDto> stats;
+
+  AuthorTrendDto({
+    required this.authorId,
+    required this.authorName,
+    required this.stats,
+  });
+
+  factory AuthorTrendDto.fromJson(Map<String, dynamic> json) {
+    var statsList = json['stats'] as List? ?? [];
+    return AuthorTrendDto(
+      authorId: json['authorId'] ?? '',
+      authorName: json['authorName'] ?? '',
+      stats: statsList.map((e) => YearlyStatDto.fromJson(e)).toList(),
+    );
+  }
+}
+
 class KeywordTrendDto {
   final String keywordId;
   final String keywordTerm;

@@ -18,7 +18,7 @@ class ApiConfig {
 
   static String get paperUrl {
     if (isProduction) {
-      return 'https://paper-service-ynmc.onrender.com';
+      return 'https://prn-paperservice.onrender.com';
     } else {
       if (!kIsWeb && Platform.isAndroid) {
         return 'http://10.0.2.2:5145';
@@ -39,19 +39,16 @@ class ApiConfig {
   }
 
   static String get adminUrl {
-    if (isProduction) {
-      return 'https://admin-service-924r.onrender.com';
-    } else {
-      if (!kIsWeb && Platform.isAndroid) {
-        return 'http://10.0.2.2:5035';
-      }
-      return 'http://localhost:5035';
+    // Admin service is run locally because Render free tier was suspended
+    if (!kIsWeb && Platform.isAndroid) {
+      return 'http://10.0.2.2:5035';
     }
+    return 'http://localhost:5035';
   }
 
   static String get trendUrl {
     if (isProduction) {
-      return 'https://trend-service-ab5q.onrender.com';
+      return 'https://journal-trend-tracker-backend-vyt9.onrender.com';
     } else {
       if (!kIsWeb && Platform.isAndroid) {
         return 'http://10.0.2.2:5003';

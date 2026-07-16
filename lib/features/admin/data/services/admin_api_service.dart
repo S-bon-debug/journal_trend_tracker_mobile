@@ -100,6 +100,34 @@ class AdminApiService {
     }
   }
 
+  // 2b. DELETE /api/admin/users/{id}
+  Future<bool> deleteUser(String userId) async {
+    try {
+      final response = await _dio.delete('users/$userId');
+      return response.statusCode == 200 || response.statusCode == 204;
+    } catch (e) {
+      debugPrint('AdminApiService.deleteUser failed: $e. Simulating locally.');
+      final list = _getMockUsers();
+      final index = list.indexWhere((u) => u.id == userId);
+      if (index != -1) {
+        final user = list[index];
+        list[index] = AdminUserDto(
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          avatarUrl: user.avatarUrl,
+          provider: user.provider,
+          role: user.role,
+          status: 1, // locked (deactivated)
+          lastLoginAt: user.lastLoginAt,
+          createdAt: user.createdAt,
+          updatedAt: DateTime.now().toIso8601String(),
+        );
+      }
+      return true; // Mock success
+    }
+  }
+
   // 3. GET /api/admin/api-sources
   Future<List<ApiSourceDto>> getApiSources() async {
     try {

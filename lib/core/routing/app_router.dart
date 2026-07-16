@@ -12,6 +12,8 @@ import '../../features/user/profile/presentation/screens/profile_screen.dart';
 import '../../features/user/auth/presentation/screens/splash_screen.dart';
 import '../../features/user/auth/presentation/screens/login_screen.dart';
 import '../../features/user/auth/presentation/screens/register_screen.dart';
+import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
+import '../../features/user/auth/presentation/screens/forgot_password_screen.dart';
 
 class AuthNotifier extends ChangeNotifier {
   static final AuthNotifier instance = AuthNotifier._();
@@ -39,7 +41,8 @@ class AppRouter {
       final isLoggedIn = storage.hasValidToken();
       final goingToAuth = state.matchedLocation == '/login' ||
           state.matchedLocation == '/register' ||
-          state.matchedLocation == '/splash';
+          state.matchedLocation == '/splash' ||
+          state.matchedLocation == '/forgot-password';
 
       if (!isLoggedIn) {
         // If not logged in and not going to login/register/splash, redirect to login
@@ -49,8 +52,18 @@ class AppRouter {
         return null;
       }
 
-      // If logged in and going to auth screens, redirect to dashboard
+      final role = storage.getUserRole();
+
+      // If logged in and going to auth screens, redirect to appropriate landing page
       if (goingToAuth) {
+        if (role == 3) {
+          return '/admin';
+        }
+        return '/trends';
+      }
+
+      // Guard the admin route from non-admin users
+      if (state.matchedLocation == '/admin' && role != 3) {
         return '/trends';
       }
 
@@ -68,6 +81,14 @@ class AppRouter {
       GoRoute(
         path: '/register',
         builder: (context, state) => const RegisterScreen(),
+      ),
+      GoRoute(
+        path: '/forgot-password',
+        builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/admin',
+        builder: (context, state) => const AdminDashboardScreen(),
       ),
       ShellRoute(
         navigatorKey: _shellNavigatorKey,
@@ -119,10 +140,9 @@ class MainNavigationScaffold extends StatelessWidget {
   int _calculateSelectedIndex(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     if (location.startsWith('/trends')) return 0;
-    if (location.startsWith('/export')) return 1;
-    if (location.startsWith('/papers')) return 2;
-    if (location.startsWith('/notifications')) return 3;
-    if (location.startsWith('/profile')) return 4;
+    if (location.startsWith('/papers')) return 1;
+    if (location.startsWith('/notifications')) return 2;
+    if (location.startsWith('/profile')) return 3;
     return 0;
   }
 
@@ -132,15 +152,12 @@ class MainNavigationScaffold extends StatelessWidget {
         context.go('/trends');
         break;
       case 1:
-        context.go('/export');
-        break;
-      case 2:
         context.go('/papers');
         break;
-      case 3:
+      case 2:
         context.go('/notifications');
         break;
-      case 4:
+      case 3:
         context.go('/profile');
         break;
     }
@@ -171,11 +188,6 @@ class MainNavigationScaffold extends StatelessWidget {
               icon: Icon(Icons.dashboard_outlined),
               activeIcon: Icon(Icons.dashboard),
               label: 'Trends',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.file_download_outlined),
-              activeIcon: Icon(Icons.file_download),
-              label: 'Export',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.library_books_outlined),

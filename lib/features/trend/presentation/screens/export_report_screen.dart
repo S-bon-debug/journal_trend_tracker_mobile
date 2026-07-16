@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:universal_html/html.dart' as html;
+import 'package:open_filex/open_filex.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/models/trend_models.dart';
 import '../../data/repositories/trend_repository.dart';
@@ -42,17 +45,48 @@ class _ExportReportScreenState extends State<ExportReportScreen> {
     });
 
     try {
-      final directory = await getApplicationDocumentsDirectory();
       final extension = _selectedFormat.contains('.csv') ? '.csv' : '.xlsx';
       final fileName = 'Report_${_selectedKeyword!.keywordTerm.replaceAll(' ', '_')}_${DateTime.now().millisecondsSinceEpoch}$extension';
-      final savePath = '${directory.path}/$fileName';
 
-      await _repository.downloadReport(_selectedKeyword!.keywordId, savePath);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Report downloaded successfully! Saved at: $savePath')),
-        );
+      if (kIsWeb) {
+        // Luồng xử lý cho Web
+        final bytes = await _repository.getReportBytes(_selectedKeyword!.keywordId);
+        final blob = html.Blob([bytes]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        
+        final anchor = html.document.createElement('a') as html.AnchorElement
+          ..href = url
+          ..style.display = 'none'
+          ..download = fileName;
+          
+        html.document.body!.children.add(anchor);
+        anchor.click();
+        
+        html.document.body!.children.remove(anchor);
+        html.Url.revokeObjectUrl(url);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Báo cáo đã được tải xuống thư mục Downloads!')),
+          );
+        }
+      } else {
+        // Luồng xử lý cho Mobile (Android/iOS)
+        final directory = await getApplicationDocumentsDirectory();
+        final savePath = '${directory.path}/$fileName';
+
+        await _repository.downloadReport(_selectedKeyword!.keywordId, savePath);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Tải báo cáo thành công! Đang mở file...'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+        
+        await OpenFilex.open(savePath);
       }
     } catch (e) {
       if (mounted) {

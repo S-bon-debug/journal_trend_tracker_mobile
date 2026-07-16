@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import '../../../../core/theme/app_theme.dart';
 import '../../data/models/admin_models.dart';
 import '../../data/services/admin_api_service.dart';
+import '../widgets/admin_ui.dart';
 
 class SyncManagerScreen extends StatefulWidget {
   const SyncManagerScreen({super.key});
@@ -12,18 +15,15 @@ class SyncManagerScreen extends StatefulWidget {
 
 class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTickerProviderStateMixin {
   final AdminApiService _apiService = AdminApiService();
-  late TabController _tabController;
+  final Set<String> _togglingSourceIds = {};
 
+  late TabController _tabController;
   bool _isLoading = true;
-  String? _error;
   bool _isTriggeringSync = false;
   bool _isWipingData = false;
-
+  String? _error;
   List<ApiSourceDto> _sources = [];
   List<ApiSyncJobDto> _syncJobs = [];
-
-  // Tracks which source IDs are currently toggling
-  final Set<String> _togglingSourceIds = {};
 
   @override
   void initState() {
@@ -45,12 +45,11 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     });
 
     try {
-      final sourcesList = await _apiService.getApiSources();
-      final jobsList = await _apiService.getSyncJobs();
-
+      final sources = await _apiService.getApiSources();
+      final jobs = await _apiService.getSyncJobs();
       setState(() {
-        _sources = sourcesList;
-        _syncJobs = jobsList;
+        _sources = sources;
+        _syncJobs = jobs;
         _isLoading = false;
       });
     } catch (e) {
@@ -62,119 +61,79 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
   }
 
   Future<void> _toggleSource(ApiSourceDto source) async {
-    final sourceId = source.id;
-    if (_togglingSourceIds.contains(sourceId)) return;
+    if (_togglingSourceIds.contains(source.id)) return;
 
-    setState(() {
-      _togglingSourceIds.add(sourceId);
-    });
-
+    setState(() => _togglingSourceIds.add(source.id));
     try {
-      final updatedSource = await _apiService.toggleApiSource(sourceId);
-      final index = _sources.indexWhere((s) => s.id == sourceId);
-      if (index != -1) {
-        setState(() {
-          _sources[index] = updatedSource;
-        });
+      final updated = await _apiService.toggleApiSource(source.id);
+      final index = _sources.indexWhere((s) => s.id == source.id);
+      if (index != -1) setState(() => _sources[index] = updated);
 
-        if (mounted) {
-          final statusString = updatedSource.isActive ? 'Bật' : 'Tắt';
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('$statusString đồng bộ từ nguồn ${updatedSource.name} thành công!', style: GoogleFonts.inter()),
-              backgroundColor: updatedSource.isActive ? Colors.greenAccent : Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(updated.isActive ? 'Đã bật nguồn ${updated.name}' : 'Đã tắt nguồn ${updated.name}'),
+          backgroundColor: updated.isActive ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error toggling sync source: $e', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Không đổi được nguồn API: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _togglingSourceIds.remove(sourceId);
-        });
-      }
+      if (mounted) setState(() => _togglingSourceIds.remove(source.id));
     }
   }
 
   Future<void> _triggerSync() async {
-    setState(() {
-      _isTriggeringSync = true;
-    });
-
+    setState(() => _isTriggeringSync = true);
     try {
       final success = await _apiService.triggerSync();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? 'Sync successfully triggered! Job is running in background.' : 'Failed to trigger sync.',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        if (success) await _loadSyncData();
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Đã gửi yêu cầu đồng bộ. Job sẽ chạy nền.' : 'Không thể kích hoạt đồng bộ.'),
+          backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      if (success) await _loadSyncData();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error triggering sync: $e', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi đồng bộ: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isTriggeringSync = false;
-        });
-      }
+      if (mounted) setState(() => _isTriggeringSync = false);
     }
   }
 
   Future<void> _wipeData() async {
+    final palette = AdminPalette(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: palette.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
+            const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
             const SizedBox(width: 8),
-            Text('Xác nhận xóa dữ liệu', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            Expanded(child: Text('Xóa dữ liệu mock?', style: GoogleFonts.inter(color: palette.text, fontWeight: FontWeight.w800))),
           ],
         ),
         content: Text(
-          'Hành động này sẽ XÓA TOÀN BỘ dữ liệu mock trong hệ thống và không thể khôi phục.\n\nBạn có chắc chắn muốn tiếp tục?',
-          style: GoogleFonts.inter(color: Colors.white70),
+          'Hành động này sẽ xóa toàn bộ dữ liệu mock và không thể khôi phục. Chỉ tiếp tục khi bạn chắc chắn đây không phải dữ liệu thật.',
+          style: GoogleFonts.inter(color: palette.muted, height: 1.45),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Hủy', style: GoogleFonts.inter(color: Colors.white54)),
-          ),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Hủy')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Xóa tất cả', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: const Text('Xóa dữ liệu'),
           ),
         ],
       ),
@@ -182,162 +141,81 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
 
     if (confirmed != true) return;
 
-    setState(() {
-      _isWipingData = true;
-    });
-
+    setState(() => _isWipingData = true);
     try {
       final success = await _apiService.wipeMockData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              success ? 'All mock data wiped successfully!' : 'Failed to wipe data.',
-              style: GoogleFonts.inter(),
-            ),
-            backgroundColor: success ? Colors.greenAccent.shade700 : Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        if (success) await _loadSyncData();
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success ? 'Đã xóa dữ liệu mock' : 'Không thể xóa dữ liệu mock'),
+          backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      if (success) await _loadSyncData();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error wiping data: $e', style: GoogleFonts.inter()),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi khi xóa dữ liệu: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isWipingData = false;
-        });
-      }
+      if (mounted) setState(() => _isWipingData = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final backgroundColor = isDark ? const Color(0xFF121212) : Colors.grey[50];
-    final textColor = isDark ? Colors.white : Colors.black87;
+    final palette = AdminPalette(context);
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text(
-          'Quản lý Đồng bộ API',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
-        ),
+        title: Text('Đồng bộ API', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
+        iconTheme: IconThemeData(color: palette.text),
+        actions: [
+          _actionButton(
+            tooltip: 'Đồng bộ ngay',
+            icon: Icons.sync_rounded,
+            color: const Color(0xFF22C55E),
+            loading: _isTriggeringSync,
+            onPressed: _triggerSync,
+          ),
+          _actionButton(
+            tooltip: 'Xóa dữ liệu mock',
+            icon: Icons.delete_sweep_rounded,
+            color: const Color(0xFFEF4444),
+            loading: _isWipingData,
+            onPressed: _wipeData,
+          ),
+          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadSyncData),
+        ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.purpleAccent,
-          labelColor: Colors.purpleAccent,
-          unselectedLabelColor: isDark ? Colors.white54 : Colors.black54,
-          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 14),
+          indicatorColor: AppTheme.primaryColor,
+          labelColor: AppTheme.primaryColor,
+          unselectedLabelColor: palette.muted,
+          labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
           tabs: const [
             Tab(text: 'Nguồn API'),
-            Tab(text: 'Lịch sử Đồng bộ'),
+            Tab(text: 'Lịch sử'),
           ],
         ),
-        actions: [
-          // Nút Đồng bộ ngay
-          _isTriggeringSync
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.0),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.sync_rounded, color: Colors.greenAccent),
-                  tooltip: 'Đồng bộ ngay',
-                  onPressed: _triggerSync,
-                ),
-          // Nút Xóa dữ liệu mock
-          _isWipingData
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12.0),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.redAccent),
-                  ),
-                )
-              : IconButton(
-                  icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
-                  tooltip: 'Xóa dữ liệu mock',
-                  onPressed: _wipeData,
-                ),
-          // Nút Refresh
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadSyncData,
-          ),
-        ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor))
           : _error != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.error_outline, size: 64, color: Colors.redAccent),
-                        const SizedBox(height: 16),
-                        Text('Error loading sync configuration', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.bold, color: textColor)),
-                        const SizedBox(height: 8),
-                        Text(_error!, textAlign: TextAlign.center, style: GoogleFonts.inter(color: Colors.white54)),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _loadSyncData,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Retry'),
-                        )
-                      ],
-                    ),
-                  ),
-                )
+              ? AdminErrorState(message: _error!, onRetry: _loadSyncData)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.amberAccent.withOpacity(0.15),
-                          border: const Border(bottom: BorderSide(color: Colors.amberAccent, width: 0.5)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.warning_amber_rounded, color: Colors.amberAccent, size: 18),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.',
-                                style: GoogleFonts.inter(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
                         children: [
-                          _buildSourcesTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
-                          _buildHistoryTab(isDark, cardColor: isDark ? Colors.white.withOpacity(0.04) : Colors.white, borderColor: isDark ? Colors.white.withOpacity(0.08) : Colors.grey[300]!, textColor: textColor),
+                          _buildSourcesTab(palette),
+                          _buildHistoryTab(palette),
                         ],
                       ),
                     ),
@@ -346,270 +224,239 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     );
   }
 
-  Widget _buildSourcesTab(bool isDark, {required Color cardColor, required Color borderColor, required Color textColor}) {
-    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+  Widget _actionButton({required String tooltip, required IconData icon, required Color color, required bool loading, required VoidCallback onPressed}) {
+    if (loading) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: color)),
+      );
+    }
+    return IconButton(tooltip: tooltip, icon: Icon(icon, color: color), onPressed: onPressed);
+  }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: _sources.length,
-      itemBuilder: (context, index) {
-        final source = _sources[index];
-        final isToggling = _togglingSourceIds.contains(source.id);
-        final syncDate = source.lastSyncedAt != null ? DateTime.tryParse(source.lastSyncedAt!)?.toLocal() : null;
+  Widget _buildSourcesTab(AdminPalette palette) {
+    if (_sources.isEmpty) {
+      return const AdminEmptyState(icon: Icons.hub_outlined, title: 'Chưa có nguồn API', message: 'Nguồn đồng bộ sẽ xuất hiện sau khi backend trả dữ liệu.');
+    }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final activeSources = _sources.where((s) => s.isActive).length;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      children: [
+        AdminSurface(
+          child: Row(
             children: [
-              // Header row: name, toggling status & switch
-              Row(
-                children: [
-                  Icon(Icons.cloud_queue, color: source.isActive ? Colors.greenAccent : Colors.grey, size: 28),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          source.name,
-                          style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 16, color: textColor),
-                        ),
-                        Text(
-                          source.baseUrl,
-                          style: GoogleFonts.inter(fontSize: 12, color: subtitleColor),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  isToggling
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.purpleAccent),
-                        )
-                      : Switch(
-                          value: source.isActive,
-                          activeColor: Colors.purpleAccent,
-                          onChanged: (_) => _toggleSource(source),
-                        ),
-                ],
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: const Color(0xFF22C55E).withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.cloud_sync_outlined, color: Color(0xFF22C55E)),
               ),
-              const Divider(height: 24, color: Colors.white10),
-
-              // Detail Grid: rates, interval, last sync
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildDetailItem('Giới hạn Tốc độ', '${source.rateLimitPerSec}/giây', subtitleColor, textColor),
-                  ),
-                  Expanded(
-                    child: _buildDetailItem('Chu kỳ', '${source.syncIntervalHours} giờ', subtitleColor, textColor),
-                  ),
-                  Expanded(
-                    child: _buildDetailItem(
-                      'Đồng bộ gần nhất',
-                      syncDate != null
-                          ? '${syncDate.day}/${syncDate.month} ${syncDate.hour}:${syncDate.minute.toString().padLeft(2, '0')}'
-                          : 'Chưa bao giờ',
-                      subtitleColor,
-                      textColor,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Supported Fields Chip Row
-              Text('Lĩnh vực hỗ trợ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.bold, color: subtitleColor)),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6.0,
-                runSpacing: 6.0,
-                children: source.supportedFields.map((field) {
-                  return Chip(
-                    label: Text(field, style: GoogleFonts.inter(fontSize: 10, color: textColor)),
-                    backgroundColor: Colors.white.withOpacity(0.04),
-                    padding: EdgeInsets.zero,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      side: BorderSide(color: Colors.white.withOpacity(0.05)),
-                    ),
-                  );
-                }).toList(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('$activeSources/${_sources.length} nguồn đang hoạt động', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: palette.text)),
+                    const SizedBox(height: 3),
+                    Text('Bật tắt nguồn dữ liệu và kiểm tra giới hạn đồng bộ.', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
+                  ],
+                ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailItem(String label, String value, Color labelColor, Color valueColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 11, color: labelColor)),
-        const SizedBox(height: 4),
-        Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.bold, color: valueColor)),
+        ),
+        const SizedBox(height: 12),
+        ..._sources.map((source) => _sourceCard(source, palette)),
       ],
     );
   }
 
-  Widget _buildHistoryTab(bool isDark, {required Color cardColor, required Color borderColor, required Color textColor}) {
-    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+  Widget _statusIndicator(bool isActive) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(
+        color: isActive ? const Color(0xFF22C55E) : const Color(0xFF9CA3AF),
+        shape: BoxShape.circle,
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF22C55E).withOpacity(0.5),
+                  blurRadius: 6,
+                  spreadRadius: 2,
+                )
+              ]
+            : null,
+      ),
+    );
+  }
 
+  Widget _sourceCard(ApiSourceDto source, AdminPalette palette) {
+    final isToggling = _togglingSourceIds.contains(source.id);
+    final color = source.isActive ? const Color(0xFF22C55E) : palette.muted;
+
+    return AdminSurface(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.cloud_queue_outlined, color: color, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(source.name, style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+                        const SizedBox(width: 8),
+                        _statusIndicator(source.isActive),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(source.baseUrl, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12, color: palette.muted)),
+                  ],
+                ),
+              ),
+              isToggling
+                  ? const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
+                  : Switch(value: source.isActive, activeColor: AppTheme.primaryColor, onChanged: (_) => _toggleSource(source)),
+            ],
+          ),
+          Divider(height: 24, color: palette.border),
+          Row(
+            children: [
+              _detail('Giới hạn', '${source.rateLimitPerSec}/giây', palette),
+              _detail('Chu kỳ', '${source.syncIntervalHours} giờ', palette),
+              _detail('Lần cuối', formatAdminDate(source.lastSyncedAt), palette),
+            ],
+          ),
+          if (source.supportedFields.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Text('Lĩnh vực hỗ trợ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: palette.muted)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: source.supportedFields.map((field) => AdminStatusPill(label: field, color: AppTheme.primaryColor)).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _detail(String label, String value, AdminPalette palette) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: palette.muted)),
+          const SizedBox(height: 4),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w800, color: palette.text)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab(AdminPalette palette) {
     if (_syncJobs.isEmpty) {
-      return Center(
-        child: Text(
-          'Không có lịch sử đồng bộ dữ liệu.',
-          style: GoogleFonts.inter(color: subtitleColor),
-        ),
-      );
+      return const AdminEmptyState(icon: Icons.history_outlined, title: 'Chưa có lịch sử đồng bộ', message: 'Các job đồng bộ sẽ xuất hiện tại đây.');
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       itemCount: _syncJobs.length,
-      itemBuilder: (context, index) {
-        final job = _syncJobs[index];
-        final isSuccess = job.status.toLowerCase() == 'success';
-        final isFailed = job.status.toLowerCase() == 'failed';
-        final statusColor = isSuccess
-            ? Colors.greenAccent
-            : (isFailed ? Colors.redAccent : Colors.amberAccent);
-        final statusText = isSuccess ? 'THÀNH CÔNG' : (isFailed ? 'THẤT BẠI' : job.status.toUpperCase());
-        
-        final started = job.startedAt != null ? DateTime.tryParse(job.startedAt!)?.toLocal() : null;
-        final finished = job.finishedAt != null ? DateTime.tryParse(job.finishedAt!)?.toLocal() : null;
-        
-        // Calculate duration in seconds
-        String duration = 'N/A';
-        if (started != null && finished != null) {
-          final diff = finished.difference(started);
-          duration = '${diff.inSeconds} giây';
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: borderColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header: Job Status & Source Name
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: statusColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      statusText,
-                      style: GoogleFonts.inter(
-                          fontWeight: FontWeight.bold, fontSize: 11, color: statusColor),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    job.sourceName,
-                    style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 15, color: textColor),
-                  ),
-                  const Spacer(),
-                  if (started != null)
-                    Text(
-                      '${started.day}/${started.month} ${started.hour.toString().padLeft(2, '0')}:${started.minute.toString().padLeft(2, '0')}',
-                      style: GoogleFonts.inter(fontSize: 11, color: subtitleColor),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              
-              if (job.queryParams != null)
-                Text(
-                  'Truy vấn: ${job.queryParams}',
-                  style: GoogleFonts.inter(fontSize: 12, color: subtitleColor),
-                ),
-              const Divider(height: 24, color: Colors.white10),
-
-              // Metrics Row
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildMetricCol('Đã lấy', job.papersFetched, subtitleColor, textColor),
-                  ),
-                  Expanded(
-                    child: _buildMetricCol('Đã thêm', job.papersInserted, subtitleColor, textColor),
-                  ),
-                  Expanded(
-                    child: _buildMetricCol('Đã cập nhật', job.papersUpdated, subtitleColor, textColor),
-                  ),
-                  Expanded(
-                    child: _buildMetricCol('Thời gian', duration, subtitleColor, textColor),
-                  ),
-                ],
-              ),
-
-              // Error messages if failed
-              if (job.errorMessage != null && job.errorMessage!.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.redAccent.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.redAccent.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(Icons.error_outline, size: 16, color: Colors.redAccent),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          job.errorMessage!,
-                          style: GoogleFonts.inter(fontSize: 12, color: Colors.redAccent),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
+      itemBuilder: (context, index) => _jobCard(_syncJobs[index], palette),
     );
   }
 
-  Widget _buildMetricCol(String label, dynamic value, Color labelColor, Color valueColor) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: GoogleFonts.inter(fontSize: 10, color: labelColor)),
-        const SizedBox(height: 2),
-        Text(
-          value.toString(),
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.bold, color: valueColor),
-        ),
-      ],
+  Widget _jobCard(ApiSyncJobDto job, AdminPalette palette) {
+    final status = job.status.toLowerCase();
+    final statusColor = status == 'success'
+        ? const Color(0xFF22C55E)
+        : status == 'failed'
+            ? const Color(0xFFEF4444)
+            : const Color(0xFFF59E0B);
+    final started = job.startedAt == null ? null : DateTime.tryParse(job.startedAt!)?.toLocal();
+    final finished = job.finishedAt == null ? null : DateTime.tryParse(job.finishedAt!)?.toLocal();
+    final duration = started != null && finished != null ? '${finished.difference(started).inSeconds} giây' : 'Đang chờ';
+
+    return AdminSurface(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              AdminStatusPill(label: _statusText(job.status), color: statusColor),
+              const SizedBox(width: 10),
+              Expanded(child: Text(job.sourceName, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: palette.text))),
+              Text(formatAdminDate(job.startedAt), style: GoogleFonts.inter(fontSize: 11, color: palette.muted)),
+            ],
+          ),
+          if (job.queryParams != null && job.queryParams!.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(job.queryParams!, maxLines: 2, overflow: TextOverflow.ellipsis, style: GoogleFonts.firaCode(fontSize: 11, color: palette.muted)),
+          ],
+          Divider(height: 24, color: palette.border),
+          Row(
+            children: [
+              _metric('Đã lấy', job.papersFetched.toString(), palette),
+              _metric('Đã thêm', job.papersInserted.toString(), palette),
+              _metric('Cập nhật', job.papersUpdated.toString(), palette),
+              _metric('Thời gian', duration, palette),
+            ],
+          ),
+          if (job.errorMessage != null && job.errorMessage!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEF4444).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.2)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.error_outline, size: 16, color: Color(0xFFEF4444)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(job.errorMessage!, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFFEF4444)))),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
+  }
+
+  Widget _metric(String label, String value, AdminPalette palette) {
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: GoogleFonts.inter(fontSize: 10, color: palette.muted)),
+          const SizedBox(height: 3),
+          Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: palette.text)),
+        ],
+      ),
+    );
+  }
+
+  String _statusText(String status) {
+    switch (status.toLowerCase()) {
+      case 'success':
+        return 'Thành công';
+      case 'failed':
+        return 'Thất bại';
+      default:
+        return status;
+    }
   }
 }

@@ -3,6 +3,7 @@ import '../../data/models/paper_summary_dto.dart';
 import '../../data/models/paper_filter_dto.dart';
 import '../../data/services/paper_api_service.dart';
 import '../../../../core/storage/token_storage.dart';
+import '../../../user/profile/data/services/user_api_service.dart';
 import '../widgets/paper_card.dart';
 import 'paper_detail_screen.dart';
 
@@ -22,13 +23,15 @@ class PapersScreen extends StatefulWidget {
 
 class _PapersScreenState extends State<PapersScreen> {
   final PaperApiService _apiService = PaperApiService();
+  final UserApiService _userService = UserApiService();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
 
   List<PaperSummaryDto> _papers = [];
+  Map<String, String> _bookmarks = {};
   bool _isLoading = false;
-  bool _hasMore = true;
   int _currentPage = 1;
+  int _totalPages = 1;
   String _currentKeyword = '';
   String? _currentJournalId;
   
@@ -40,11 +43,11 @@ class _PapersScreenState extends State<PapersScreen> {
   
   String? _error;
 
-  final List<int?> _years = [null, 2024, 2023, 2022, 2021, 2020];
+  final List<int?> _years = [null, 2026];
   final List<Map<String, String?>> _sources = [
     {'name': 'All Sources', 'value': null},
-    {'name': 'Semantic Scholar', 'value': 'semantic_scholar'},
-    {'name': 'OpenAlex', 'value': 'openalex'},
+    {'name': 'Semantic Scholar', 'value': 'SemanticScholar'},
+    {'name': 'OpenAlex', 'value': 'OpenAlex'},
   ];
 
   @override
@@ -58,14 +61,50 @@ class _PapersScreenState extends State<PapersScreen> {
       _currentJournalId = widget.initialJournalId;
     }
     _loadUserRole();
+    _fetchBookmarks();
     _fetchPapers();
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
-        if (!_isLoading && _hasMore) {
-          _fetchPapers(loadMore: true);
-        }
+  }
+
+  Future<void> _fetchBookmarks() async {
+    try {
+      final bookmarks = await _userService.getBookmarks();
+      if (mounted) {
+        setState(() {
+          _bookmarks = {
+            for (var b in bookmarks.where((b) => b.entityType == 'paper'))
+              b.entityId: b.id
+          };
+        });
       }
-    });
+    } catch (e) {
+      debugPrint('Failed to fetch bookmarks: $e');
+    }
+  }
+
+  Future<void> _toggleBookmark(PaperSummaryDto paper) async {
+    final isBookmarked = _bookmarks.containsKey(paper.id);
+    try {
+      if (isBookmarked) {
+        final bookmarkId = _bookmarks[paper.id]!;
+        await _userService.deleteBookmark(bookmarkId);
+        setState(() {
+          _bookmarks.remove(paper.id);
+        });
+      } else {
+        await _userService.addBookmark(
+          entityType: 'paper',
+          entityId: paper.id,
+          entityTitle: paper.title,
+        );
+        await _fetchBookmarks();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update bookmark: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _loadUserRole() async {
@@ -75,7 +114,7 @@ class _PapersScreenState extends State<PapersScreen> {
     });
   }
 
-  Future<void> _fetchPapers({bool loadMore = false}) async {
+  Future<void> _fetchPapers({int? targetPage}) async {
     if (_isLoading) return;
 
     setState(() {
@@ -84,28 +123,29 @@ class _PapersScreenState extends State<PapersScreen> {
     });
 
     try {
-      if (!loadMore) {
-        _currentPage = 1;
-        _papers.clear();
-      }
+      final pageToFetch = targetPage ?? 1;
 
       final filter = PaperFilterDto(
         keyword: _currentKeyword,
         year: _selectedYear,
         source: _selectedSource,
         journalId: _currentJournalId,
-        page: _currentPage,
+        page: pageToFetch,
         pageSize: 10,
       );
 
       final result = await _apiService.searchPapers(filter);
 
       setState(() {
-        _papers.addAll(result.items);
-        _currentPage++;
-        _hasMore = _currentPage <= result.totalPages;
+        _papers = result.items;
+        _currentPage = result.page;
+        _totalPages = result.totalPages == 0 ? 1 : result.totalPages;
         _isLoading = false;
       });
+      
+      if (targetPage != null && _scrollController.hasClients) {
+        _scrollController.animateTo(0, duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+      }
     } catch (e) {
       setState(() {
         _error = e.toString();
@@ -117,7 +157,7 @@ class _PapersScreenState extends State<PapersScreen> {
   void _onSearch(String keyword) {
     _currentKeyword = keyword;
     _currentJournalId = null; // Clear journal filter when searching from search bar
-    _fetchPapers();
+    _fetchPapers(targetPage: 1);
   }
 
   @override
@@ -147,7 +187,7 @@ class _PapersScreenState extends State<PapersScreen> {
               children: [
                 FloatingActionButton.extended(
                   heroTag: 'refresh_btn',
-                  onPressed: () => _fetchPapers(loadMore: false),
+                  onPressed: () => _fetchPapers(targetPage: _currentPage),
                   icon: const Icon(Icons.refresh),
                   label: const Text('Refresh'),
                   backgroundColor: Colors.white,
@@ -168,7 +208,7 @@ class _PapersScreenState extends State<PapersScreen> {
                       );
                       
                       // Reload list
-                      _fetchPapers(); 
+                      _fetchPapers(targetPage: 1); 
                     } catch (e) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error: $e')),
@@ -184,7 +224,7 @@ class _PapersScreenState extends State<PapersScreen> {
             )
           : FloatingActionButton.extended(
               heroTag: 'refresh_btn',
-              onPressed: () => _fetchPapers(loadMore: false),
+              onPressed: () => _fetchPapers(targetPage: _currentPage),
               icon: const Icon(Icons.refresh),
               label: const Text('Refresh'),
               backgroundColor: Colors.blue,
@@ -436,34 +476,75 @@ class _PapersScreenState extends State<PapersScreen> {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => _fetchPapers(loadMore: false),
-      child: ListView.separated(
-        controller: _scrollController,
-        padding: const EdgeInsets.all(20.0),
-        itemCount: _papers.length + (_hasMore ? 1 : 0),
-        separatorBuilder: (context, index) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          if (index == _papers.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24.0),
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
+    return Column(
+      children: [
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () => _fetchPapers(targetPage: _currentPage),
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(20.0),
+              itemCount: _papers.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                final paper = _papers[index];
+                return PaperCard(
+                  paper: paper,
+                  isBookmarked: _bookmarks.containsKey(paper.id),
+                  onBookmarkToggle: () => _toggleBookmark(paper),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PaperDetailScreen(paperId: paper.id),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ),
+        _buildPagination(),
+      ],
+    );
+  }
 
-          final paper = _papers[index];
-          return PaperCard(
-            paper: paper,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PaperDetailScreen(paperId: paper.id),
-                ),
-              );
-            },
-          );
-        },
+  Widget _buildPagination() {
+    if (_totalPages <= 1) return const SizedBox.shrink();
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF16161E) : Colors.white,
+        border: Border(top: BorderSide(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey[200]!)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: _currentPage > 1 ? () => _fetchPapers(targetPage: _currentPage - 1) : null,
+            color: _currentPage > 1 ? Colors.blue[700] : Colors.grey,
+          ),
+          const SizedBox(width: 16),
+          Text(
+            'Page $_currentPage of $_totalPages',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white70 : Colors.grey[800],
+            ),
+          ),
+          const SizedBox(width: 16),
+          IconButton(
+            icon: const Icon(Icons.chevron_right),
+            onPressed: _currentPage < _totalPages ? () => _fetchPapers(targetPage: _currentPage + 1) : null,
+            color: _currentPage < _totalPages ? Colors.blue[700] : Colors.grey,
+          ),
+        ],
       ),
     );
   }
