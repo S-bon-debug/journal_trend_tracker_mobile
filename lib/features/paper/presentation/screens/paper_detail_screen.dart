@@ -192,35 +192,21 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     return CustomScrollView(
       slivers: [
         SliverAppBar(
-          expandedHeight: 120.0,
-          floating: false,
+          expandedHeight: 60.0,
+          floating: true,
           pinned: true,
-          elevation: 0,
-          backgroundColor: Theme.of(context).primaryColor,
-          iconTheme: const IconThemeData(color: Colors.white),
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            title: const Text(
-              'Paper Detail',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-            ),
-            background: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topRight,
-                  end: Alignment.bottomLeft,
-                  colors: [
-                    Theme.of(context).primaryColor,
-                    Theme.of(context).primaryColor.withOpacity(0.7),
-                  ],
-                ),
-              ),
+          elevation: 1,
+          backgroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.black87),
+          title: const Text(
+            'Article',
+            style: TextStyle(
+              color: Colors.black87,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
             ),
           ),
+          centerTitle: true,
         ),
         SliverToBoxAdapter(
           child: Padding(
@@ -228,39 +214,87 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (_paper!.journal != null) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          _paper!.journal!.name.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1.2,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
+                      if (_paper!.publicationYear != null)
+                        Text(
+                          '${_paper!.publicationYear}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
                 Text(
                   _paper!.title,
                   style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    fontFamily: 'Georgia', // Elegant serif font
+                    fontWeight: FontWeight.w700,
                     height: 1.3,
-                    color: Colors.black87,
+                    color: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 20),
                 
-                // Publication Info Row
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
-                  children: [
-                    if (_paper!.publicationYear != null)
-                      _buildInfoBadge(Icons.calendar_today, _paper!.publicationYear.toString(), Colors.blue),
-                    _buildInfoBadge(Icons.format_quote, '${_paper!.citationCount} Citations', Colors.orange),
-                    _buildInfoBadge(Icons.library_books, '${_paper!.referenceCount} References', Colors.purple),
-                  ],
+                if (_paper!.authors.isNotEmpty) ...[
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: _paper!.authors.map((a) {
+                      final isLast = a == _paper!.authors.last;
+                      return Text(
+                        a.name + (isLast ? '' : ','),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+
+                // Metadata Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey.shade300,
+                  width: double.infinity,
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+
+                // Stats Row (DOI, Citations, Source)
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 8,
+                  spacing: 16,
+                  runSpacing: 12,
                   children: [
-                    if (_paper!.source.isNotEmpty)
-                      _buildInfoBadge(Icons.source, 'Source: ${_paper!.source}', Colors.teal),
                     if (_paper!.doi != null && _paper!.doi!.isNotEmpty)
-                      _buildInfoBadge(Icons.link, 'DOI: ${_paper!.doi}', Colors.indigo),
+                      _buildMiniBadge(Icons.link, _paper!.doi!),
+                    _buildMiniBadge(Icons.format_quote, '${_paper!.citationCount} Citations'),
+                    if (_paper!.source.isNotEmpty)
+                      _buildMiniBadge(Icons.language, _paper!.source),
                   ],
                 ),
+                const SizedBox(height: 24),
                 if (_paper!.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) ...[
                   const SizedBox(height: 12),
                   SizedBox(
@@ -328,133 +362,68 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   const SizedBox(height: 24),
                 ],
 
-                const Row(
-                  children: [
-                    Icon(Icons.people_outline, color: Colors.black54, size: 20),
-                    SizedBox(width: 8),
-                    Text('Authors', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_paper!.authors.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _paper!.authors.map((a) => Chip(
-                      label: Text(a.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                      backgroundColor: Colors.blue.withOpacity(0.1),
-                      side: BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    )).toList(),
-                  )
-                else
-                  const Text('No author information available', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
-                const SizedBox(height: 24),
+                // We replaced Journal and Authors to the top. Just hiding the old blocks.
 
-                const Row(
-                  children: [
-                    Icon(Icons.library_books_outlined, color: Colors.black54, size: 20),
-                    SizedBox(width: 8),
-                    Text('Journal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_paper!.journal != null)
+                if (_paper!.abstractText != null && _paper!.abstractText!.isNotEmpty) ...[
+                  const Row(
+                    children: [
+                      Icon(Icons.format_quote, color: Colors.blueGrey, size: 24),
+                      SizedBox(width: 8),
+                      Text('Abstract', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Colors.blueGrey, letterSpacing: 0.5)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border(left: BorderSide(color: Theme.of(context).primaryColor, width: 6)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            _paper!.journal!.name,
-                            style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic, color: Colors.black87),
-                          ),
-                        ),
-                        TextButton.icon(
-                          onPressed: _toggleFollowJournal,
-                          icon: Icon(
-                            _isFollowingJournal ? Icons.star : Icons.star_border,
-                            color: Colors.purpleAccent,
-                          ),
-                          label: Text(
-                            _isFollowingJournal ? 'Following' : 'Follow',
-                            style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  const Text('No journal information available', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
-                const SizedBox(height: 24),
-
-                const Row(
-                  children: [
-                    Icon(Icons.article_outlined, color: Colors.black54, size: 20),
-                    SizedBox(width: 8),
-                    Text('Abstract', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_paper!.abstractText != null && _paper!.abstractText!.isNotEmpty)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
                     child: Text(
                       _paper!.abstractText!,
-                      style: const TextStyle(fontSize: 15, height: 1.6, color: Colors.black87),
+                      style: TextStyle(
+                        fontSize: 16, 
+                        height: 1.8, 
+                        color: Colors.blueGrey.shade800,
+                        letterSpacing: 0.2,
+                        fontStyle: FontStyle.normal,
+                      ),
+                      textAlign: TextAlign.justify,
                     ),
-                  )
-                else
-                  const Text('No abstract available', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
-                const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 32),
+                ],
 
-                const Row(
-                  children: [
-                    Icon(Icons.category_outlined, color: Colors.black54, size: 20),
-                    SizedBox(width: 8),
-                    Text('Fields of Study', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (_paper!.fieldsOfStudy != null && _paper!.fieldsOfStudy!.isNotEmpty)
+                if (_paper!.fieldsOfStudy != null && _paper!.fieldsOfStudy!.isNotEmpty) ...[
+                  const Row(
+                    children: [
+                      Icon(Icons.category_outlined, color: Colors.black54, size: 20),
+                      SizedBox(width: 8),
+                      Text('Fields of Study', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: _paper!.fieldsOfStudy!.map((f) => Chip(
-                      label: Text(f, style: TextStyle(color: Colors.green[800], fontSize: 13, fontWeight: FontWeight.w500)),
+                      label: Text(f, style: TextStyle(color: Colors.green[800], fontSize: 13, fontWeight: FontWeight.w600)),
                       backgroundColor: Colors.green.shade50,
                       side: BorderSide.none,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     )).toList(),
-                  )
-                else
-                  const Text('No fields of study specified', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
-                const SizedBox(height: 24),
+                  ),
+                  const SizedBox(height: 24),
+                ],
 
                 const Row(
                   children: [
@@ -496,32 +465,21 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     );
   }
 
-  Widget _buildInfoBadge(IconData icon, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-              softWrap: true,
-            ),
+  Widget _buildMiniBadge(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: Colors.grey.shade600),
+        const SizedBox(width: 6),
+        Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.grey.shade700,
+            fontWeight: FontWeight.w500,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
