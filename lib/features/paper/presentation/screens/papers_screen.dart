@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../data/services/paper_api_service.dart';
 import '../../data/models/gap_matrix_response_dto.dart';
+import '../../data/models/paper_summary_dto.dart';
+import '../../data/models/paper_filter_dto.dart';
 import 'paper_detail_screen.dart';
 import 'dart:ui';
 
@@ -26,12 +28,36 @@ class _PapersScreenState extends State<PapersScreen> {
   bool _isLoading = false;
   String? _error;
   GapMatrixResponseDto? _result;
+  
+  List<PaperSummaryDto> _trendingPapers = [];
+  bool _isLoadingTrending = true;
 
   @override
   void initState() {
     super.initState();
     if (widget.initialKeyword != null) {
       _ideaController.text = widget.initialKeyword!;
+    }
+    _loadTrendingPapers();
+  }
+
+  Future<void> _loadTrendingPapers() async {
+    try {
+      final result = await _apiService.searchPapers(
+        PaperFilterDto(page: 1, pageSize: 5)
+      );
+      if (mounted) {
+        setState(() {
+          _trendingPapers = result.items;
+          _isLoadingTrending = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingTrending = false;
+        });
+      }
     }
   }
 
@@ -99,6 +125,8 @@ class _PapersScreenState extends State<PapersScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (_result == null && !_isLoading && _error == null)
+                        _buildSuggestionsBox(),
                       _buildIdeaInputBox(),
                       const SizedBox(height: 24),
                       if (_isLoading)
@@ -106,7 +134,9 @@ class _PapersScreenState extends State<PapersScreen> {
                       else if (_error != null)
                         _buildErrorBox()
                       else if (_result != null)
-                        _buildResultSection(),
+                        _buildResultSection()
+                      else
+                        _buildTrendingPapersBox(),
                     ],
                   ),
                 ),
@@ -236,6 +266,161 @@ class _PapersScreenState extends State<PapersScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSuggestionsBox() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    final suggestions = [
+      "AI support for student job seeking in university",
+      "Applying Generative AI for personalized learning",
+      "Impact of machine learning on medical diagnosis",
+      "Blockchain technology in supply chain transparency"
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Need some inspiration? Try these:',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: suggestions.map((idea) {
+            return Material(
+              color: isDark ? const Color(0xFF2A2A35) : Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () {
+                  _ideaController.text = idea;
+                  _analyzeIdea();
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lightbulb, size: 16, color: Colors.amber[600]),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          idea,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.blue[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildTrendingPapersBox() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (_isLoadingTrending) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_trendingPapers.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 32),
+        Text(
+          '🔥 Top Trending Papers',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black87,
+          ),
+        ),
+        const SizedBox(height: 16),
+        ..._trendingPapers.map((paper) => InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PaperDetailScreen(paperId: paper.id),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E1E28) : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  paper.title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.format_quote, size: 16, color: Colors.blue[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${paper.citationCount} Citations',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[700],
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 14,
+                      color: isDark ? Colors.white38 : Colors.black38,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        )).toList(),
+      ],
     );
   }
 
