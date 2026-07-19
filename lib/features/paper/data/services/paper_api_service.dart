@@ -6,6 +6,7 @@ import '../models/paged_result_dto.dart';
 import '../models/paper_summary_dto.dart';
 import '../models/paper_detail_dto.dart';
 import '../models/paper_filter_dto.dart';
+import '../models/gap_matrix_response_dto.dart';
 
 class PaperApiService {
   // If running on Android emulator, use 10.0.2.2 to access host localhost.
@@ -70,6 +71,36 @@ class PaperApiService {
       }
     } catch (e) {
       throw Exception('Lỗi mạng: $e');
+    }
+  }
+
+  Future<GapMatrixResponseDto> generateGapMatrix(String userIdea) async {
+    final uri = Uri.parse('$baseUrl/papers/generate-gap-matrix');
+    
+    try {
+      final storage = await TokenStorage.instance;
+      final token = storage.getAccessToken();
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'userIdea': userIdea,
+          'paperIds': null, // We are letting the backend use OpenAlex fully
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final jsonMap = json.decode(response.body);
+        return GapMatrixResponseDto.fromJson(jsonMap);
+      } else {
+        throw Exception('Failed to generate matrix: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
     }
   }
 }
