@@ -97,10 +97,10 @@ class PaperApiService {
         final jsonMap = json.decode(response.body);
         return GapMatrixResponseDto.fromJson(jsonMap);
       } else {
-        throw Exception('Failed to generate matrix: ${response.statusCode}');
+        throw Exception(response.body.isNotEmpty ? response.body : 'Failed to generate matrix: ${response.statusCode}');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      throw Exception('$e');
     }
   }
 }
