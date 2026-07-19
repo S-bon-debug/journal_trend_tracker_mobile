@@ -24,13 +24,15 @@ class TrendOverviewDto {
 class YearlyStatDto {
   final int year;
   final int paperCount;
+  final int? forecastPaperCount;
 
-  YearlyStatDto({required this.year, required this.paperCount});
+  YearlyStatDto({required this.year, required this.paperCount, this.forecastPaperCount});
 
   factory YearlyStatDto.fromJson(Map<String, dynamic> json) {
     return YearlyStatDto(
       year: json['year'] ?? 0,
       paperCount: json['paperCount'] ?? 0,
+      forecastPaperCount: json['forecastPaperCount'],
     );
   }
 }
@@ -38,13 +40,15 @@ class YearlyStatDto {
 class TopKeywordDto {
   final String keywordId;
   final String keywordTerm;
+  final String? trendStatus;
 
-  TopKeywordDto({required this.keywordId, required this.keywordTerm});
+  TopKeywordDto({required this.keywordId, required this.keywordTerm, this.trendStatus});
 
   factory TopKeywordDto.fromJson(Map<String, dynamic> json) {
     return TopKeywordDto(
       keywordId: json['keywordId'] ?? '',
       keywordTerm: json['keywordTerm'] ?? '',
+      trendStatus: json['trendStatus'],
     );
   }
 }
@@ -68,12 +72,14 @@ class TopTopicDto {
   final String topicName;
   final int paperCount;
   final double? growthRate;
+  final String? trendStatus;
 
   TopTopicDto({
     required this.topicId,
     required this.topicName,
     required this.paperCount,
     this.growthRate,
+    this.trendStatus,
   });
 
   factory TopTopicDto.fromJson(Map<String, dynamic> json) {
@@ -82,6 +88,7 @@ class TopTopicDto {
       topicName: json['topicName'] ?? '',
       paperCount: json['paperCount'] ?? 0,
       growthRate: json['growthRate']?.toDouble(),
+      trendStatus: json['trendStatus'],
     );
   }
 }
@@ -154,12 +161,14 @@ class TopAuthorDto {
   final String name;
   final String? affiliation;
   final int paperCount;
+  final String? trendStatus;
 
   TopAuthorDto({
     required this.authorId,
     required this.name,
     this.affiliation,
     required this.paperCount,
+    this.trendStatus,
   });
 
   factory TopAuthorDto.fromJson(Map<String, dynamic> json) {
@@ -168,6 +177,7 @@ class TopAuthorDto {
       name: json['name'] ?? '',
       affiliation: json['affiliation'],
       paperCount: json['paperCount'] ?? 0,
+      trendStatus: json['trendStatus'],
     );
   }
 }

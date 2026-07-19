@@ -237,7 +237,16 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
             return const SizedBox(height: 320, child: Center(child: Text('No data')));
           }
           
-          final spots = trend.stats.map((e) => FlSpot(e.year.toDouble(), e.paperCount.toDouble())).toList();
+          final List<FlSpot> actualSpots = [];
+          final List<FlSpot> forecastSpots = [];
+          for (int i = 0; i < trend.stats.length; i++) {
+            final stat = trend.stats[i];
+            actualSpots.add(FlSpot(stat.year.toDouble(), stat.paperCount.toDouble()));
+            if (i == trend.stats.length - 1 && stat.forecastPaperCount != null) {
+              forecastSpots.add(FlSpot(stat.year.toDouble(), stat.paperCount.toDouble()));
+              forecastSpots.add(FlSpot(stat.year.toDouble() + 1, stat.forecastPaperCount!.toDouble()));
+            }
+          }
           final isDark = Theme.of(context).brightness == Brightness.dark;
           final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
           final borderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
@@ -281,7 +290,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                       borderData: FlBorderData(show: false),
                       lineBarsData: [
                         LineChartBarData(
-                          spots: spots,
+                          spots: actualSpots,
                           isCurved: true,
                           color: Colors.blueAccent,
                           barWidth: 4,
@@ -296,6 +305,20 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                             ),
                           ),
                         ),
+                        if (forecastSpots.isNotEmpty)
+                          LineChartBarData(
+                            spots: forecastSpots,
+                            isCurved: false,
+                            color: Colors.orangeAccent,
+                            barWidth: 3,
+                            isStrokeCapRound: true,
+                            dashArray: [8, 4],
+                            dotData: FlDotData(
+                              show: true,
+                              getDotPainter: (spot, percent, barData, index) => 
+                                FlDotCirclePainter(radius: 4, color: Colors.orangeAccent, strokeWidth: 2, strokeColor: Colors.white),
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -354,6 +377,26 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
+                        if (topic.trendStatus != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            margin: const EdgeInsets.only(bottom: 4),
+                            decoration: BoxDecoration(
+                              color: topic.trendStatus!.contains('Hot') ? Colors.redAccent.withOpacity(0.15) 
+                                   : (topic.trendStatus!.contains('Stable') ? Colors.blueAccent.withOpacity(0.15) 
+                                   : Colors.grey.withOpacity(0.15)),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              topic.trendStatus!,
+                              style: GoogleFonts.inter(
+                                color: topic.trendStatus!.contains('Hot') ? Colors.redAccent 
+                                     : (topic.trendStatus!.contains('Stable') ? Colors.blueAccent : Colors.grey),
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         Text(
                           '${isPositive ? '+' : ''}${growth.toStringAsFixed(1)}%',
                           style: GoogleFonts.inter(color: isPositive ? Colors.green : Colors.red, fontSize: 14, fontWeight: FontWeight.bold),
@@ -397,12 +440,21 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
                     border: Border.all(color: isSelected ? Colors.blueAccent : (isDark ? Colors.white24 : Colors.black12)),
                     boxShadow: isSelected ? [BoxShadow(color: Colors.blueAccent.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
                   ),
-                  child: Text(
-                    keyword.keywordTerm,
-                    style: GoogleFonts.inter(
-                      color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        keyword.keywordTerm,
+                        style: GoogleFonts.inter(
+                          color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        ),
+                      ),
+                      if (keyword.trendStatus != null && keyword.trendStatus!.contains('Hot')) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.local_fire_department_rounded, color: Colors.orangeAccent, size: 14),
+                      ]
+                    ],
                   ),
                 ),
               );
