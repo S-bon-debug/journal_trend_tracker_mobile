@@ -261,17 +261,51 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       _buildInfoBadge(Icons.link, 'DOI: ${_paper!.doi}', Colors.indigo),
                   ],
                 ),
-                const SizedBox(height: 24),
-
-                if (_paper!.url != null && _paper!.url!.isNotEmpty) ...[
+                if (_paper!.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) ...[
+                  const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () async {
-                        final uri = Uri.parse(_paper!.url!);
-                        if (await canLaunchUrl(uri)) {
+                        final uri = Uri.parse(_paper!.pdfUrl!);
+                        try {
                           await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } else {
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not open the PDF link')),
+                            );
+                          }
+                        }
+                      },
+                      icon: const Icon(Icons.picture_as_pdf),
+                      label: const Text('Download / View PDF', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.red[600],
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                if (_paper!.url != null && _paper!.url!.isNotEmpty || _paper!.doi != null && _paper!.doi!.isNotEmpty) ...[
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        var urlString = _paper!.url != null && _paper!.url!.isNotEmpty ? _paper!.url! : _paper!.doi!;
+                        if (!urlString.startsWith('http')) {
+                          urlString = 'https://doi.org/$urlString';
+                        }
+                        final uri = Uri.parse(urlString);
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } catch (e) {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Could not open the link')),

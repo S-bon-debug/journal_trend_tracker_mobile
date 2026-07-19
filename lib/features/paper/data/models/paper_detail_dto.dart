@@ -7,6 +7,7 @@ class PaperDetailDto {
   final int? publicationYear;
   final String? doi;
   final String? url;
+  final String? pdfUrl;
   final int citationCount;
   final int referenceCount;
   final List<String>? fieldsOfStudy;
@@ -23,6 +24,7 @@ class PaperDetailDto {
     this.publicationYear,
     this.doi,
     this.url,
+    this.pdfUrl,
     required this.citationCount,
     required this.referenceCount,
     this.fieldsOfStudy,
@@ -41,6 +43,7 @@ class PaperDetailDto {
       publicationYear: json['publicationYear'],
       doi: json['doi'],
       url: json['url'],
+      pdfUrl: json['pdfUrl'],
       citationCount: json['citationCount'] ?? 0,
       referenceCount: json['referenceCount'] ?? 0,
       fieldsOfStudy: (json['fieldsOfStudy'] as List?)?.map((e) => e.toString()).toList(),
