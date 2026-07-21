@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiConfig {
   // Set to true to connect to production Render URL, or false for localhost emulator
-  static const bool isProduction = true;
+  static const bool isProduction = false;
 
   static String get identityUrl {
     if (isProduction) {

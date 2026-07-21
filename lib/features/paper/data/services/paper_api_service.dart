@@ -37,7 +37,7 @@ class PaperApiService {
     final uri = Uri.parse('$baseUrl/papers/$id');
     
     try {
-      final response = await http.get(uri);
+      final response = await http.get(uri).timeout(const Duration(seconds: 15));
       
       if (response.statusCode == 200) {
         final jsonMap = json.decode(response.body);
@@ -51,6 +51,7 @@ class PaperApiService {
       throw Exception('Error fetching paper details: $e');
     }
   }
+
   Future<void> triggerSyncPapers() async {
     final uri = Uri.parse('${ApiConfig.adminUrl}/api/admin/sync-jobs/trigger');
     try {
@@ -97,10 +98,78 @@ class PaperApiService {
         final jsonMap = json.decode(response.body);
         return GapMatrixResponseDto.fromJson(jsonMap);
       } else {
-        throw Exception(response.body.isNotEmpty ? response.body : 'Failed to generate matrix: ${response.statusCode}');
+        String errorMessage = 'Lỗi hệ thống: ${response.statusCode}';
+        if (response.body.isNotEmpty) {
+          if (response.body.contains('503') || response.body.contains('UNAVAILABLE')) {
+            errorMessage = 'Google Gemini AI hiện đang bị quá tải (Lỗi 503). Hệ thống không thể phục vụ ngay lúc này, vui lòng chờ ít phút rồi thử lại sau nhé!';
+          } else if (response.body.contains('429') || response.body.contains('RESOURCE_EXHAUSTED') || response.body.contains('quota')) {
+            errorMessage = 'Google Gemini AI thông báo bạn đã xài hết lượt miễn phí (Lỗi 429 - Quota Exceeded). Vui lòng đổi API Key khác hoặc đợi một khoảng thời gian theo yêu cầu của Google để được cấp lại lượt dùng nhé!';
+          } else {
+            errorMessage = response.body;
+          }
+        }
+        throw Exception(errorMessage);
       }
     } catch (e) {
-      throw Exception('$e');
+      if (e.toString().contains('Google Gemini AI hiện đang bị quá tải') ||
+          e.toString().contains('Google Gemini AI thông báo bạn đã xài hết lượt miễn phí')) {
+        rethrow;
+      }
+      throw Exception('Lỗi khi phân tích: $e');
+    }
+  }
+
+  Future<dynamic> uploadPdfForDeepAnalysis(String paperId, String filePath) async {
+    final uri = Uri.parse('$baseUrl/papers/$paperId/deep-analyze');
+    
+    try {
+      final storage = await TokenStorage.instance;
+      final token = storage.getAccessToken();
+
+      var request = http.MultipartRequest('POST', uri);
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to analyze PDF: ${response.statusCode}. Body: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading PDF: $e');
+    }
+  }
+
+  Future<dynamic> uploadPdfBytesForDeepAnalysis(String paperId, List<int> bytes, String fileName) async {
+    final uri = Uri.parse('$baseUrl/papers/$paperId/deep-analyze');
+    
+    try {
+      final storage = await TokenStorage.instance;
+      final token = storage.getAccessToken();
+
+      var request = http.MultipartRequest('POST', uri);
+      if (token != null && token.isNotEmpty) {
+        request.headers['Authorization'] = 'Bearer $token';
+      }
+      
+      request.files.add(http.MultipartFile.fromBytes('file', bytes, filename: fileName));
+      
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+      
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception('Failed to analyze PDF: ${response.statusCode}. Body: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error uploading PDF bytes: $e');
     }
   }
 }

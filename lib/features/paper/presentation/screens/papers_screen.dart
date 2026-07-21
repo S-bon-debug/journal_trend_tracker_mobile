@@ -5,6 +5,10 @@ import '../../data/models/paper_summary_dto.dart';
 import '../../data/models/paper_filter_dto.dart';
 import 'paper_detail_screen.dart';
 import 'dart:ui';
+import 'package:url_launcher/url_launcher.dart';
+
+// Temporary variable to preserve the idea input across tab switches
+String _globalIdeaText = '';
 
 class PapersScreen extends StatefulWidget {
   final String? initialKeyword;
@@ -37,6 +41,34 @@ class _PapersScreenState extends State<PapersScreen> {
     super.initState();
     if (widget.initialKeyword != null) {
       _ideaController.text = widget.initialKeyword!;
+    } else {
+      _ideaController.text = _globalIdeaText;
+    }
+    
+    _ideaController.addListener(() {
+      _globalIdeaText = _ideaController.text;
+    });
+    
+    _loadTrendingPapers();
+  }
+
+  Future<void> _loadTrendingPapers() async {
+    try {
+      final result = await _apiService.searchPapers(
+        PaperFilterDto(page: 1, pageSize: 5)
+      );
+      if (mounted) {
+        setState(() {
+          _trendingPapers = result.items;
+          _isLoadingTrending = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingTrending = false;
+        });
+      }
     }
     _loadTrendingPapers();
   }
@@ -656,7 +688,10 @@ class _PapersScreenState extends State<PapersScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaperDetailScreen(paperId: paper.id),
+            builder: (context) => PaperDetailScreen(
+              paperId: paper.id,
+              fallbackPdfUrl: paper.pdfUrl,
+            ),
           ),
         );
       },
@@ -691,7 +726,40 @@ class _PapersScreenState extends State<PapersScreen> {
                     ),
                   ),
                 ),
-                if (paper.hasFullText) ...[
+                if (paper.pdfUrl != null && paper.pdfUrl!.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () async {
+                      final uri = Uri.parse(paper.pdfUrl!);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri, mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.picture_as_pdf, size: 12, color: Colors.red[700]),
+                          const SizedBox(width: 4),
+                          Text(
+                            'PDF',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ] else if (paper.hasFullText) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
