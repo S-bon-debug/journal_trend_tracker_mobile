@@ -1,14 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:http/http.dart' as http;
 import '../../data/models/paper_detail_dto.dart';
+import '../../data/models/deep_analysis_result_dto.dart';
 import '../../data/services/paper_api_service.dart';
 import '../../../user/profile/data/services/user_api_service.dart';
 import '../../../user/profile/data/models/user_models.dart';
 
 class PaperDetailScreen extends StatefulWidget {
   final String paperId;
+  final String? fallbackPdfUrl;
 
-  const PaperDetailScreen({Key? key, required this.paperId}) : super(key: key);
+  const PaperDetailScreen({
+    Key? key,
+    required this.paperId,
+    this.fallbackPdfUrl,
+  }) : super(key: key);
 
   @override
   _PaperDetailScreenState createState() => _PaperDetailScreenState();
@@ -19,6 +27,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
   final UserApiService _userApiService = UserApiService();
   PaperDetailDto? _paper;
   bool _isLoading = true;
+  bool _isExtracting = false;
   String? _error;
 
   List<FollowDto> _follows = [];
@@ -160,6 +169,344 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
+  Future<void> _showDeepAnalysisBottomSheet() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allow it to exceed half screen
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.analytics, color: Colors.deepPurple, size: 28),
+                    SizedBox(width: 12),
+                    Text(
+                      'Phân tích chuyên sâu PDF',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Chọn cách bạn muốn cung cấp file PDF để AI có thể đọc và phân tích sâu toàn bộ bài báo.',
+                  style: TextStyle(fontSize: 15, color: Colors.grey.shade700, height: 1.4),
+                ),
+                const SizedBox(height: 24),
+                
+                // Option 1: Auto Extract
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleAutoExtract();
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.deepPurple.shade50,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
+                          ),
+                          child: const Icon(Icons.auto_awesome, color: Colors.deepPurple),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Tự động tải từ Link', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
+                              SizedBox(height: 4),
+                              Text('Hệ thống tự tải PDF từ nhà xuất bản (có thể bị chặn nếu bảo mật cao).', style: TextStyle(fontSize: 13, color: Colors.black54)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Option 2: Manual Upload
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _handleManualUpload();
+                  },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.white,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.upload_file, color: Colors.grey),
+                        ),
+                        const SizedBox(width: 16),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Tải lên thủ công (Khuyên dùng)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                              SizedBox(height: 4),
+                              Text('Tự tải PDF về máy và Upload. Tỉ lệ thành công 100%.', style: TextStyle(fontSize: 13, color: Colors.black54)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleAutoExtract() async {
+    if (_isExtracting) return;
+    
+    final pdfUrlToUse = (_paper?.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) 
+        ? _paper!.pdfUrl 
+        : (widget.fallbackPdfUrl != null && widget.fallbackPdfUrl!.isNotEmpty) 
+            ? widget.fallbackPdfUrl 
+            : null;
+            
+    if (pdfUrlToUse == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Bài báo này không có link PDF để tải tự động. Vui lòng tìm và tải thủ công!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isExtracting = true;
+    });
+
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(color: Colors.deepPurple),
+            SizedBox(height: 16),
+            Text('Đang tải và phân tích PDF...', style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+      ),
+    );
+
+    try {
+      final response = await http.get(Uri.parse(pdfUrlToUse));
+      if (response.statusCode != 200) {
+        throw Exception('Lỗi khi tải PDF (HTTP ${response.statusCode})');
+      }
+
+      final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+      if (contentType.contains('text/html')) {
+        throw Exception('Link này là trang web, không phải file PDF trực tiếp. Vui lòng nhấn vào "Read Full Paper", tải file PDF về máy, sau đó dùng tính năng Tải lên (Manual Upload) trong mục Phân tích chuyên sâu!');
+      }
+
+      final apiResult = await _apiService.uploadPdfBytesForDeepAnalysis(widget.paperId, response.bodyBytes, 'temp_paper_${widget.paperId}.pdf');
+
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+      setState(() {
+        _isExtracting = false;
+      });
+
+      final dto = DeepAnalysisResultDto.fromJson(apiResult);
+      _showDeepAnalysisResultDialog(dto);
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+      setState(() {
+        _isExtracting = false;
+      });
+      
+      String errorMessage = e.toString();
+      if (errorMessage.contains("Could not extract text from PDF")) {
+        errorMessage = "Hệ thống không thể trích xuất chữ từ PDF này (có thể file bị lỗi, hoặc là trang web chứ không phải PDF). Vui lòng tự tải PDF chuẩn về máy rồi dùng Manual Upload!";
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(errorMessage), 
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleManualUpload() async {
+    try {
+      FilePickerResult? result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf'],
+        withData: true, // Need this for Flutter Web
+      );
+
+      if (result != null && result.files.single != null) {
+        if (!mounted) return;
+        
+        // Show processing dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: Colors.deepPurple),
+                SizedBox(height: 16),
+                Text('Đã nhận file. AI đang phân tích...', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        );
+
+        final platformFile = result.files.single;
+        dynamic apiResult;
+        
+        if (platformFile.bytes != null) {
+          // Web (and Mobile if withData: true)
+          apiResult = await _apiService.uploadPdfBytesForDeepAnalysis(widget.paperId, platformFile.bytes!, platformFile.name);
+        } else if (platformFile.path != null) {
+          // Fallback for Mobile if bytes is null
+          apiResult = await _apiService.uploadPdfForDeepAnalysis(widget.paperId, platformFile.path!);
+        } else {
+          throw Exception("Không thể đọc được file.");
+        }
+
+        if (!mounted) return;
+        Navigator.of(context, rootNavigator: true).pop(); // Close dialog
+        
+        final dto = DeepAnalysisResultDto.fromJson(apiResult);
+        _showDeepAnalysisResultDialog(dto);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop(); // Try close dialog if error occurs during upload
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi phân tích: $e'), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  void _showDeepAnalysisResultDialog(DeepAnalysisResultDto dto) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('✨ Kết quả phân tích', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+              ],
+            ),
+            const Divider(),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildAnalysisSection('Tóm tắt (Summary)', dto.summary, Icons.article),
+                    _buildAnalysisSection('Phương pháp (Methodology)', dto.methodology, Icons.science),
+                    _buildAnalysisSection('Kết quả cốt lõi (Findings)', dto.findings, Icons.lightbulb),
+                    _buildAnalysisSection('Hạn chế (Limitations)', dto.limitations, Icons.warning_amber),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnalysisSection(String title, String content, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: Colors.deepPurple, size: 20),
+              const SizedBox(width: 8),
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.deepPurple.withOpacity(0.1)),
+            ),
+            child: Text(
+              content.isEmpty ? 'Không có thông tin.' : content,
+              style: const TextStyle(fontSize: 15, height: 1.5),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -295,26 +642,25 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                if (_paper!.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        final uri = Uri.parse(_paper!.pdfUrl!);
-                        try {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Could not open the PDF link')),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.picture_as_pdf),
-                      label: const Text('Download / View PDF', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
+                Builder(
+                  builder: (context) {
+                    final pdfUrlToUse = (_paper!.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) 
+                        ? _paper!.pdfUrl 
+                        : (widget.fallbackPdfUrl != null && widget.fallbackPdfUrl!.isNotEmpty) 
+                            ? widget.fallbackPdfUrl 
+                            : null;
+
+                    if (pdfUrlToUse != null) {
+                      return Column(
+                        children: [
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _handleAutoExtract,
+                              icon: const Icon(Icons.analytics),
+                              label: const Text('Download & Deep Analyze PDF', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         backgroundColor: Colors.red[600],
                         foregroundColor: Colors.white,
@@ -325,7 +671,29 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showDeepAnalysisBottomSheet,
+                      icon: const Icon(Icons.analytics),
+                      label: const Text('✨ Phân tích chuyên sâu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        backgroundColor: Colors.deepPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
 
                 if (_paper!.url != null && _paper!.url!.isNotEmpty || _paper!.doi != null && _paper!.doi!.isNotEmpty) ...[
                   SizedBox(
