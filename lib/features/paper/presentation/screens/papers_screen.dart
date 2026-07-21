@@ -70,27 +70,6 @@ class _PapersScreenState extends State<PapersScreen> {
         });
       }
     }
-    _loadTrendingPapers();
-  }
-
-  Future<void> _loadTrendingPapers() async {
-    try {
-      final result = await _apiService.searchPapers(
-        PaperFilterDto(page: 1, pageSize: 5)
-      );
-      if (mounted) {
-        setState(() {
-          _trendingPapers = result.items;
-          _isLoadingTrending = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingTrending = false;
-        });
-      }
-    }
   }
 
   Future<void> _analyzeIdea() async {

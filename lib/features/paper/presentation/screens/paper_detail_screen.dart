@@ -291,7 +291,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               ],
             ),
           ),
-        );
+        ));
       },
     );
   }
