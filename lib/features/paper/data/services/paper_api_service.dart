@@ -98,12 +98,12 @@ class PaperApiService {
         final jsonMap = json.decode(response.body);
         return GapMatrixResponseDto.fromJson(jsonMap);
       } else {
-        String errorMessage = 'Lỗi hệ thống: ${response.statusCode}';
+        String errorMessage = 'System error: ${response.statusCode}';
         if (response.body.isNotEmpty) {
           if (response.body.contains('503') || response.body.contains('UNAVAILABLE')) {
-            errorMessage = 'Google Gemini AI hiện đang bị quá tải (Lỗi 503). Hệ thống không thể phục vụ ngay lúc này, vui lòng chờ ít phút rồi thử lại sau nhé!';
+            errorMessage = 'Google Gemini AI is currently overloaded (Error 503). The system cannot serve you at the moment, please wait a few minutes and try again!';
           } else if (response.body.contains('429') || response.body.contains('RESOURCE_EXHAUSTED') || response.body.contains('quota')) {
-            errorMessage = 'Google Gemini AI thông báo bạn đã xài hết lượt miễn phí (Lỗi 429 - Quota Exceeded). Vui lòng đổi API Key khác hoặc đợi một khoảng thời gian theo yêu cầu của Google để được cấp lại lượt dùng nhé!';
+            errorMessage = 'Google Gemini AI reports that you have exceeded your free quota limit (Error 429 - Quota Exceeded). Please switch to another API Key or wait for the cooling-off period requested by Google to get it restored!';
           } else {
             errorMessage = response.body;
           }
@@ -111,11 +111,11 @@ class PaperApiService {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      if (e.toString().contains('Google Gemini AI hiện đang bị quá tải') ||
-          e.toString().contains('Google Gemini AI thông báo bạn đã xài hết lượt miễn phí')) {
+      if (e.toString().contains('Google Gemini AI is currently overloaded') ||
+          e.toString().contains('Google Gemini AI reports that you have exceeded your free quota limit')) {
         rethrow;
       }
-      throw Exception('Lỗi khi phân tích: $e');
+      throw Exception('Error analyzing: $e');
     }
   }
 

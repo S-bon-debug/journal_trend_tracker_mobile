@@ -171,8 +171,8 @@ class MainNavigationScaffold extends StatelessWidget {
     const navItems = [
       (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Trends'),
       (Icons.library_books_outlined, Icons.library_books_rounded, 'Papers'),
-      (Icons.notifications_outlined, Icons.notifications_rounded, 'Thông báo'),
-      (Icons.person_outline_rounded, Icons.person_rounded, 'Hồ sơ'),
+      (Icons.notifications_outlined, Icons.notifications_rounded, 'Notifications'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Profile'),
     ];
 
     const activeGradients = [

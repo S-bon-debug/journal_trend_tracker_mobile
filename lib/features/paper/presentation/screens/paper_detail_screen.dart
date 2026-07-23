@@ -175,20 +175,20 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isFollowing ? 'Bỏ theo dõi chủ đề' : 'Theo dõi chủ đề'),
+        title: Text(isFollowing ? 'Unfollow topic' : 'Follow topic'),
         content: Text(
           isFollowing 
-              ? 'Bạn có chắc chắn muốn bỏ theo dõi chủ đề "${keyword.term}"?' 
-              : 'Bạn có muốn theo dõi "${keyword.term}" để nhận thông báo khi có bài báo mới?',
+              ? 'Are you sure you want to unfollow the topic "${keyword.term}"?' 
+              : 'Do you want to follow "${keyword.term}" to receive notifications when new papers are published?',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isFollowing ? 'Bỏ theo dõi' : 'Theo dõi', style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+            child: Text(isFollowing ? 'Unfollow' : 'Follow', style: const TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -204,14 +204,14 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
           await _userApiService.unfollow(keywordFollow.id);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Đã bỏ theo dõi chủ đề "${keyword.term}"')),
+              SnackBar(content: Text('Unfollowed topic "${keyword.term}"')),
             );
           }
         } else {
           await _userApiService.followKeyword(keyword.id, targetName: keyword.term);
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Đang theo dõi chủ đề "${keyword.term}"')),
+              SnackBar(content: Text('Following topic "${keyword.term}"')),
             );
           }
         }
@@ -222,7 +222,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Lỗi: $e')),
+            SnackBar(content: Text('Error: $e')),
           );
         }
       }
@@ -256,7 +256,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   children: [
                     CircularProgressIndicator(color: Color(0xFF8B5CF6)),
                     SizedBox(height: 16),
-                    Text('Đang tải và phân tích PDF...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    Text('Uploading and analyzing PDF...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -272,7 +272,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
         } else if (platformFile.path != null) {
           apiResult = await _apiService.uploadPdfForDeepAnalysis(widget.paperId, platformFile.path!);
         } else {
-          throw Exception("Không thể đọc được file.");
+          throw Exception("Cannot read file.");
         }
 
         if (!mounted) return;
@@ -285,7 +285,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi phân tích: $e'), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text('Analysis error: $e'), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -314,7 +314,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                     colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
                   ).createShader(bounds),
                   child: Text(
-                    '✨ Kết quả phân tích chuyên sâu',
+                    '✨ Deep Analysis Results',
                     style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
                 ),
@@ -331,10 +331,10 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildAnalysisSection('Tóm tắt (Summary)', dto.summary, Icons.article_rounded),
-                    _buildAnalysisSection('Phương pháp (Methodology)', dto.methodology, Icons.science_rounded),
-                    _buildAnalysisSection('Kết quả cốt lõi (Findings)', dto.findings, Icons.lightbulb_rounded),
-                    _buildAnalysisSection('Hạn chế (Limitations)', dto.limitations, Icons.warning_amber_rounded),
+                    _buildAnalysisSection('Summary', dto.summary, Icons.article_rounded),
+                    _buildAnalysisSection('Methodology', dto.methodology, Icons.science_rounded),
+                    _buildAnalysisSection('Core Findings', dto.findings, Icons.lightbulb_rounded),
+                    _buildAnalysisSection('Limitations', dto.limitations, Icons.warning_amber_rounded),
                   ],
                 ),
               ),
@@ -376,7 +376,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               border: Border.all(color: borderColor),
             ),
             child: Text(
-              content.isEmpty ? 'Không có thông tin.' : content,
+              content.isEmpty ? 'No information available.' : content,
               style: GoogleFonts.inter(fontSize: 14, height: 1.6, color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87),
             ),
           ),
@@ -405,7 +405,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       ElevatedButton(
                         onPressed: _fetchPaperDetail,
                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
-                        child: const Text('Thử lại'),
+                        child: const Text('Retry'),
                       )
                     ],
                   ),
@@ -437,7 +437,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
             onPressed: () => Navigator.pop(context),
           ),
           title: Text(
-            'Chi tiết bài báo',
+            'Paper Details',
             style: GoogleFonts.inter(
               color: textColor,
               fontWeight: FontWeight.bold,
@@ -510,7 +510,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                _isFollowingJournal ? 'Đã theo dõi' : 'Theo dõi tạp chí',
+                                _isFollowingJournal ? 'Following' : 'Follow journal',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
@@ -615,7 +615,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                           onPressed: _handleManualUpload,
                           icon: const Icon(Icons.upload_file_rounded, color: Colors.white, size: 20),
                           label: const Text(
-                            '✨ Phân tích chuyên sâu (Upload PDF)',
+                            '✨ Deep Analysis (Upload PDF)',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -646,13 +646,13 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                             } catch (e) {
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Không thể mở liên kết')),
+                                  const SnackBar(content: Text('Cannot open link')),
                                 );
                               }
                             }
                           },
                           icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                          label: const Text('Đọc toàn văn bài báo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          label: const Text('Read full text', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF8B5CF6),
                             side: const BorderSide(color: Color(0xFF8B5CF6), width: 1.5),
@@ -725,7 +725,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                       const Icon(Icons.category_rounded, color: Color(0xFF8B5CF6), size: 18),
                       const SizedBox(width: 8),
                       Text(
-                        'Lĩnh vực nghiên cứu',
+                        'Fields of Study',
                         style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
                       ),
                     ],
@@ -758,7 +758,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                     const Icon(Icons.local_offer_rounded, color: Color(0xFFEC4899), size: 18),
                     const SizedBox(width: 8),
                     Text(
-                      'Từ khóa',
+                      'Keywords',
                       style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
                     ),
                   ],

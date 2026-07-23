@@ -23,24 +23,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationDto(
           id: 'mock_1',
           type: 'new_paper',
-          title: 'Bài báo mới được xuất bản',
-          body: 'Một bài báo mới phù hợp với từ khóa bạn đang theo dõi "Machine Learning" đã được xuất bản: "Optimizing Neural Network Architectures via Evolutionary Algorithms".',
+          title: 'New paper published',
+          body: 'A new paper matching your followed keyword "Machine Learning" has been published: "Optimizing Neural Network Architectures via Evolutionary Algorithms".',
           isRead: false,
           createdAt: DateTime.now().subtract(const Duration(minutes: 10)).toIso8601String(),
         ),
         NotificationDto(
           id: 'mock_2',
           type: 'sync',
-          title: 'Đồng bộ dữ liệu thành công',
-          body: 'Cơ sở dữ liệu xu hướng tạp chí khoa học đã được cập nhật thành công với 12 xu hướng mới được phân tích.',
+          title: 'Data sync successful',
+          body: 'The scientific journal trends database has been successfully updated with 12 new analyzed trends.',
           isRead: false,
           createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
         ),
         NotificationDto(
           id: 'mock_3',
           type: 'default',
-          title: 'Cập nhật thông tin hệ thống',
-          body: 'Thông tin tùy chọn nghiên cứu ưu tiên của bạn đã được lưu lại thành công. Bạn sẽ nhận được các bài báo liên quan nhất.',
+          title: 'System information updated',
+          body: 'Your preferred research options have been successfully saved. You will receive the most relevant papers.',
           isRead: true,
           createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
         ),
@@ -99,60 +99,62 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       }
     }
 
-    // Show details dialog
-    showModalBottomSheet(
+    // Show details dialog centered in the middle of the screen
+    showDialog(
       context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _getIconForType(item.type),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      item.title,
-                      style: GoogleFonts.inter(
-                        fontSize: 18, 
-                        fontWeight: FontWeight.bold, 
-                        color: Colors.white
+        return Dialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _getIconForType(item.type),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        item.title.replaceAll('[Giả lập] ', '').replaceAll('[Giả lập]', ''),
+                        style: GoogleFonts.inter(
+                          fontSize: 18, 
+                          fontWeight: FontWeight.bold, 
+                          color: Colors.white
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                item.body,
-                style: GoogleFonts.inter(fontSize: 14, color: Colors.white70, height: 1.5),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                _formatTimestamp(item.createdAt),
-                style: GoogleFonts.inter(fontSize: 12, color: Colors.white30),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purpleAccent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: 16),
+                Text(
+                  item.body,
+                  style: GoogleFonts.inter(fontSize: 14, color: Colors.white70, height: 1.5),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _formatTimestamp(item.createdAt),
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.white30),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purpleAccent,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -232,7 +234,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -256,7 +257,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     const Icon(Icons.notifications_rounded, color: Colors.white, size: 26),
                     const SizedBox(width: 12),
                     const Text(
-                      'Thông báo',
+                      'Notifications',
                       style: TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 22,

@@ -83,20 +83,20 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
     return Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text('Quản trị hệ thống', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
+        title: Text('System Administration', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: palette.text),
         actions: [
           IconButton(
-            tooltip: 'Đăng xuất',
+            tooltip: 'Logout',
             icon: const Icon(Icons.logout),
             onPressed: () async {
               final authService = AuthApiService();
               await authService.logout();
             },
           ),
-          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadDashboardData),
+          IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh), onPressed: _loadDashboardData),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -105,8 +105,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
           unselectedLabelColor: palette.muted,
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
           tabs: const [
-            Tab(text: 'Tổng quan'),
-            Tab(text: 'Nhật ký'),
+            Tab(text: 'Overview'),
+            Tab(text: 'Logs'),
           ],
         ),
       ),
@@ -116,7 +116,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               ? AdminErrorState(message: _error!, onRetry: _loadDashboardData)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Could not connect to Admin API. Displaying mock data.'),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
@@ -146,23 +146,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
               mainAxisSpacing: 12,
               childAspectRatio: count == 4 ? 1.35 : 1.12,
               children: [
-                _statCard('Người dùng', _totalUsersCount.toString(), '$_lockedUsersCount đã khóa', Icons.people_alt_outlined, AppTheme.accentColor),
-                _statCard('Nguồn API', _activeSourcesCount.toString(), 'đang hoạt động', Icons.hub_outlined, const Color(0xFF22C55E)),
-                _statCard('Lượt sync', _totalJobsCount.toString(), 'job đã ghi nhận', Icons.sync_rounded, const Color(0xFFF59E0B)),
-                _statCard('Nhật ký', _logs.length.toString(), 'hoạt động gần đây', Icons.receipt_long_outlined, AppTheme.primaryColor),
+                _statCard('Users', _totalUsersCount.toString(), '$_lockedUsersCount locked', Icons.people_alt_outlined, AppTheme.accentColor),
+                _statCard('API Sources', _activeSourcesCount.toString(), 'active', Icons.hub_outlined, const Color(0xFF22C55E)),
+                _statCard('Sync Jobs', _totalJobsCount.toString(), 'jobs recorded', Icons.sync_rounded, const Color(0xFFF59E0B)),
+                _statCard('Logs', _logs.length.toString(), 'recent activities', Icons.receipt_long_outlined, AppTheme.primaryColor),
               ],
             );
           },
         ),
         const SizedBox(height: 20),
-        Text('Quản lý nhanh', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
+        Text('Quick Management', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: palette.text)),
         const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
               child: _shortcutCard(
-                title: 'Người dùng',
-                description: 'Tìm kiếm, lọc vai trò, khóa hoặc mở khóa tài khoản',
+                title: 'Users',
+                description: 'Search, filter roles, lock or unlock accounts',
                 icon: Icons.manage_accounts_outlined,
                 color: AppTheme.accentColor,
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const UserManagementScreen())),
@@ -171,8 +171,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             const SizedBox(width: 10),
             Expanded(
               child: _shortcutCard(
-                title: 'Đồng bộ API',
-                description: 'Bật tắt nguồn dữ liệu, chạy sync và xem lịch sử',
+                title: 'API Sync',
+                description: 'Toggle data sources, run sync and view history',
                 icon: Icons.cloud_sync_outlined,
                 color: const Color(0xFF22C55E),
                 onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncManagerScreen())),
@@ -268,7 +268,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
 
   Widget _buildLogs(AdminPalette palette) {
     if (_logs.isEmpty) {
-      return const AdminEmptyState(icon: Icons.receipt_long_outlined, title: 'Chưa có nhật ký', message: 'Các thay đổi quan trọng sẽ xuất hiện tại đây.');
+      return const AdminEmptyState(icon: Icons.receipt_long_outlined, title: 'No logs yet', message: 'Important changes will appear here.');
     }
 
     return ListView.builder(
@@ -300,9 +300,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (log.oldValue != null) Expanded(child: _valueBlock('Cũ', log.oldValue.toString(), const Color(0xFFEF4444), palette)),
+                    if (log.oldValue != null) Expanded(child: _valueBlock('Old', log.oldValue.toString(), const Color(0xFFEF4444), palette)),
                     if (log.oldValue != null && log.newValue != null) const SizedBox(width: 10),
-                    if (log.newValue != null) Expanded(child: _valueBlock('Mới', log.newValue.toString(), const Color(0xFF22C55E), palette)),
+                    if (log.newValue != null) Expanded(child: _valueBlock('New', log.newValue.toString(), const Color(0xFF22C55E), palette)),
                   ],
                 ),
               ],

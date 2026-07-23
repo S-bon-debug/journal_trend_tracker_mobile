@@ -75,11 +75,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã bỏ lưu "${removedPaper.entityTitle}"', style: GoogleFonts.inter()),
+          content: Text('Removed "${removedPaper.entityTitle}" from bookmarks', style: GoogleFonts.inter()),
           backgroundColor: const Color(0xFF8B5CF6),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
-            label: 'HOÀN TÁC',
+            label: 'UNDO',
             textColor: Colors.white,
             onPressed: () async {
               setState(() {
@@ -117,11 +117,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã bỏ theo dõi chủ đề "${removed.targetName}"', style: GoogleFonts.inter()),
+          content: Text('Unfollowed topic "${removed.targetName}"', style: GoogleFonts.inter()),
           backgroundColor: const Color(0xFF8B5CF6),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
-            label: 'HOÀN TÁC',
+            label: 'UNDO',
             textColor: Colors.white,
             onPressed: () async {
               setState(() {
@@ -154,11 +154,11 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã bỏ theo dõi tạp chí "${removed.targetName}"', style: GoogleFonts.inter()),
+          content: Text('Unfollowed journal "${removed.targetName}"', style: GoogleFonts.inter()),
           backgroundColor: const Color(0xFF8B5CF6),
           behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
-            label: 'HOÀN TÁC',
+            label: 'UNDO',
             textColor: Colors.white,
             onPressed: () async {
               setState(() {
@@ -211,7 +211,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   children: [
                     Icon(Icons.bookmark_rounded, size: 18),
                     SizedBox(width: 6),
-                    Text('Bài báo đã lưu'),
+                    Text('Saved Papers'),
                   ],
                 ),
               ),
@@ -221,7 +221,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                   children: [
                     Icon(Icons.star_rounded, size: 18),
                     SizedBox(width: 6),
-                    Text('Chủ đề theo dõi'),
+                    Text('Followed Topics'),
                   ],
                 ),
               ),
@@ -249,7 +249,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                           ElevatedButton(
                             onPressed: _loadData,
                             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF8B5CF6)),
-                            child: const Text('Thử lại'),
+                            child: const Text('Retry'),
                           )
                         ],
                       ),
@@ -281,7 +281,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chưa có bài báo nào được lưu.',
+              'No saved papers yet.',
               style: GoogleFonts.inter(color: textColorTertiary, fontSize: 15),
             ),
           ],
@@ -372,7 +372,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              paper.note ?? 'Chưa có thông tin chi tiết',
+                              paper.note ?? 'No details available',
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: GoogleFonts.inter(color: textColorSecondary, fontSize: 13),
@@ -396,7 +396,7 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  'Đã lưu ngày ${_formatDate(paper.createdAt)}',
+                                  'Saved on ${_formatDate(paper.createdAt)}',
                                   style: GoogleFonts.inter(fontSize: 12, color: textColorTertiary),
                                 ),
                               ],
@@ -438,14 +438,14 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                'Từ khóa đang theo dõi',
+                'Followed Keywords',
                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
               ),
             ],
           ),
           const SizedBox(height: 14),
           if (_followedKeywords.isEmpty)
-            Text('Chưa theo dõi từ khóa nào.', style: GoogleFonts.inter(color: textColorTertiary, fontSize: 14))
+            Text('No followed keywords yet.', style: GoogleFonts.inter(color: textColorTertiary, fontSize: 14))
           else
             Wrap(
               spacing: 10.0,
@@ -516,14 +516,14 @@ class _BookmarksScreenState extends State<BookmarksScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                'Tạp chí đang theo dõi',
+                'Followed Journals',
                 style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: textColor),
               ),
             ],
           ),
           const SizedBox(height: 14),
           if (_followedJournals.isEmpty)
-            Text('Chưa theo dõi tạp chí nào.', style: GoogleFonts.inter(color: textColorTertiary, fontSize: 14))
+            Text('No followed journals yet.', style: GoogleFonts.inter(color: textColorTertiary, fontSize: 14))
           else
             ListView.separated(
               shrinkWrap: true,

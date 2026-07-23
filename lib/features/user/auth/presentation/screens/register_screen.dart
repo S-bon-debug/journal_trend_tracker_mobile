@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/auth_api_service.dart';
-import '../../../../../core/theme/app_theme.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -46,7 +45,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+              content: Text('Registration successful! Please login.'),
               backgroundColor: Colors.green,
             ),
           );
@@ -177,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Đăng ký tài khoản',
+                      'Create Account',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(
                         fontSize: 26,
@@ -188,7 +187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tham gia hệ thống theo dõi xu hướng nghiên cứu học thuật',
+                      'Join academic research trend tracking system',
                       textAlign: TextAlign.center,
                       style: GoogleFonts.inter(fontSize: 14, color: subtextColor),
                     ),
@@ -229,7 +228,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         controller: _fullNameController,
                         style: TextStyle(color: textColor),
                         decoration: InputDecoration(
-                          labelText: 'Họ và tên',
+                          labelText: 'Full Name',
                           labelStyle: TextStyle(color: subtextColor, fontSize: 14),
                           prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
                           border: InputBorder.none,
@@ -237,7 +236,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) {
-                            return 'Vui lòng nhập họ và tên';
+                            return 'Please enter your full name';
                           }
                           return null;
                         },
@@ -257,7 +256,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         keyboardType: TextInputType.emailAddress,
                         style: TextStyle(color: textColor),
                         decoration: InputDecoration(
-                          labelText: 'Địa chỉ Email',
+                          labelText: 'Email Address',
                           labelStyle: TextStyle(color: subtextColor, fontSize: 14),
                           prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF8B5CF6), size: 20),
                           border: InputBorder.none,
@@ -265,10 +264,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) {
-                            return 'Vui lòng nhập email';
+                            return 'Please enter your email';
                           }
                           if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) {
-                            return 'Email không hợp lệ';
+                            return 'Invalid email';
                           }
                           return null;
                         },
@@ -288,7 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         obscureText: _obscurePassword,
                         style: TextStyle(color: textColor),
                         decoration: InputDecoration(
-                          labelText: 'Mật khẩu',
+                          labelText: 'Password',
                           labelStyle: TextStyle(color: subtextColor, fontSize: 14),
                           prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
                           suffixIcon: IconButton(
@@ -304,10 +303,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         validator: (val) {
                           if (val == null || val.isEmpty) {
-                            return 'Vui lòng nhập mật khẩu';
+                            return 'Please enter your password';
                           }
                           if (val.length < 6) {
-                            return 'Mật khẩu tối thiểu 6 ký tự';
+                            return 'Password must be at least 6 characters';
                           }
                           return null;
                         },
@@ -317,7 +316,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Role Selection Header
                     Text(
-                      'Chọn vai trò của bạn',
+                      'Select your role',
                       style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.bold, color: textColor),
                     ),
                     const SizedBox(height: 12),
@@ -325,11 +324,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     // Role Cards row
                     Row(
                       children: [
-                        _buildRoleCard(2, 'Sinh viên', 'Tìm kiếm tài liệu', Icons.school_outlined),
+                        _buildRoleCard(2, 'Student', 'Search papers', Icons.school_outlined),
                         const SizedBox(width: 12),
-                        _buildRoleCard(1, 'Giảng viên', 'Giảng dạy & N/C', Icons.co_present_outlined),
+                        _buildRoleCard(1, 'Lecturer', 'Teaching & Res.', Icons.co_present_outlined),
                         const SizedBox(width: 12),
-                        _buildRoleCard(3, 'Nhà N/C', 'Công bố khoa học', Icons.science_outlined),
+                        _buildRoleCard(3, 'Researcher', 'Publish papers', Icons.science_outlined),
                       ],
                     ),
                     const SizedBox(height: 32),
@@ -371,7 +370,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                                 )
                               : const Text(
-                                  'Đăng ký',
+                                  'Register',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                         ),
@@ -384,7 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Đã có tài khoản? ',
+                          'Already have an account? ',
                           style: TextStyle(color: subtextColor, fontSize: 14),
                         ),
                         GestureDetector(
@@ -394,7 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
                             ).createShader(bounds),
                             child: const Text(
-                              'Đăng nhập ngay',
+                              'Login now',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,

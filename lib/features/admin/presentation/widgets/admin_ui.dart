@@ -195,14 +195,14 @@ class AdminErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 56, color: Color(0xFFEF4444)),
             const SizedBox(height: 16),
-            Text('Không tải được dữ liệu', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: palette.text)),
+            Text('Failed to load data', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: palette.text)),
             const SizedBox(height: 8),
             Text(message, textAlign: TextAlign.center, style: GoogleFonts.inter(color: palette.muted)),
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
-              label: const Text('Thử lại'),
+              label: const Text('Retry'),
             ),
           ],
         ),
@@ -213,7 +213,7 @@ class AdminErrorState extends StatelessWidget {
 
 String formatAdminDate(String? value, {bool includeYear = false}) {
   final date = value == null ? null : DateTime.tryParse(value)?.toLocal();
-  if (date == null) return 'Chưa có';
+  if (date == null) return 'Never';
   final day = date.day.toString().padLeft(2, '0');
   final month = date.month.toString().padLeft(2, '0');
   final hour = date.hour.toString().padLeft(2, '0');

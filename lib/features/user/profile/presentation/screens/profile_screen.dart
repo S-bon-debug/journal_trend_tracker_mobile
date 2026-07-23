@@ -325,12 +325,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // --- Settings Section ---
                         if (!_isEditing) ...[
                           if (_isAdmin) ...[
-                            _buildSectionLabel('Quản trị hệ thống'),
+                            _buildSectionLabel('System Administration'),
                             const SizedBox(height: 8),
                             _buildAdminCard(),
                             const SizedBox(height: 24),
                           ],
-                          _buildSectionLabel('Cài đặt chung'),
+                          _buildSectionLabel('General Settings'),
                           const SizedBox(height: 8),
                           _buildGeneralSettingsCard(),
                           const SizedBox(height: 32),
@@ -402,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Quản lý thành viên, đồng bộ API & cấu hình',
+                        'Manage members, sync API & configuration',
                         style: GoogleFonts.inter(
                             color: Colors.white.withOpacity(0.8),
                             fontSize: 12),
@@ -460,7 +460,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       : [const Color(0xFFF59E0B), const Color(0xFFD97706)],
                   icon: isCurrentDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
                 ),
-                title: Text('Chế độ tối', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+                title: Text('Dark Mode', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
                 trailing: Switch.adaptive(
                   value: isCurrentDark,
                   activeColor: const Color(0xFF8B5CF6),
@@ -476,19 +476,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
               colors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
               icon: Icons.help_outline_rounded,
             ),
-            title: Text('Trợ giúp & Hỗ trợ', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+            title: Text('Help & Support', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
             trailing: Icon(Icons.arrow_forward_ios, size: 14, color: subtitleColor),
             onTap: () {
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
                   backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                  title: Text('Trợ giúp & Hỗ trợ', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
+                  title: Text('Help & Support', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
                   content: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ kỹ thuật, vui lòng liên hệ:', style: GoogleFonts.inter(color: subtitleColor)),
+                      Text('If you have any questions or need technical support, please contact:', style: GoogleFonts.inter(color: subtitleColor)),
                       const SizedBox(height: 16),
                       Row(children: [const Icon(Icons.email, size: 18, color: Color(0xFF8B5CF6)), const SizedBox(width: 8), Text('support@trendtracker.com', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500))]),
                       const SizedBox(height: 8),
@@ -512,7 +512,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               colors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
               icon: Icons.info_outline_rounded,
             ),
-            title: Text('Về Journal Trend Tracker', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+            title: Text('About Journal Trend Tracker', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
             trailing: Icon(Icons.arrow_forward_ios, size: 14, color: subtitleColor),
             onTap: () {
               showAboutDialog(
@@ -520,7 +520,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 applicationName: 'Journal Trend Tracker',
                 applicationVersion: '1.0.0 (Production)',
                 applicationIcon: const Icon(Icons.trending_up_rounded, size: 48, color: Color(0xFF8B5CF6)),
-                children: [Text('Hệ thống theo dõi xu hướng nghiên cứu học thuật dựa trên kiến trúc microservices.', style: GoogleFonts.inter(fontSize: 14))],
+                children: [Text('Academic research trend tracking system based on microservices architecture.', style: GoogleFonts.inter(fontSize: 14))],
               );
             },
           ),
@@ -761,7 +761,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textAlign: TextAlign.center,
                 style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
                 decoration: InputDecoration(
-                  hintText: 'Nhập tên',
+                  hintText: 'Enter name',
                   hintStyle: TextStyle(color: textColorTertiary),
                   focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF8B5CF6))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cardBorderColor)),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/auth_api_service.dart';
-import '../../../../../core/theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -108,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Title
                     Text(
-                      'Chào mừng trở lại',
+                      'Welcome Back',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 26,
@@ -119,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Theo dõi xu hướng nghiên cứu học thuật',
+                      'Track academic research trends',
                       textAlign: TextAlign.center,
                       style: TextStyle(fontSize: 14, color: subtextColor),
                     ),
@@ -166,8 +165,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Vui lòng nhập email';
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) return 'Email không hợp lệ';
+                          if (val == null || val.isEmpty) return 'Please enter your email';
+                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(val)) return 'Invalid email';
                           return null;
                         },
                       ),
@@ -186,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         obscureText: _obscurePassword,
                         style: TextStyle(color: textColor),
                         decoration: InputDecoration(
-                          labelText: 'Mật khẩu',
+                          labelText: 'Password',
                           labelStyle: TextStyle(color: subtextColor, fontSize: 14),
                           prefixIcon: const Icon(Icons.lock_outline_rounded, color: Color(0xFF8B5CF6), size: 20),
                           suffixIcon: IconButton(
@@ -201,8 +200,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         validator: (val) {
-                          if (val == null || val.isEmpty) return 'Vui lòng nhập mật khẩu';
-                          if (val.length < 6) return 'Mật khẩu tối thiểu 6 ký tự';
+                          if (val == null || val.isEmpty) return 'Please enter your password';
+                          if (val.length < 6) return 'Password must be at least 6 characters';
                           return null;
                         },
                       ),
@@ -219,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
                           ).createShader(bounds),
                           child: const Text(
-                            'Quên mật khẩu?',
+                            'Forgot password?',
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -268,7 +267,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
                                 )
                               : const Text(
-                                  'Đăng nhập',
+                                  'Login',
                                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                                 ),
                         ),
@@ -280,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Chưa có tài khoản? ", style: TextStyle(color: subtextColor, fontSize: 14)),
+                        Text("Don't have an account? ", style: TextStyle(color: subtextColor, fontSize: 14)),
                         GestureDetector(
                           onTap: () => context.push('/register'),
                           child: ShaderMask(
@@ -288,7 +287,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
                             ).createShader(bounds),
                             child: const Text(
-                              'Đăng ký ngay',
+                              'Register now',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,

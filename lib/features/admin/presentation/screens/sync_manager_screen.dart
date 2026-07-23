@@ -72,7 +72,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(updated.isActive ? 'Đã bật nguồn ${updated.name}' : 'Đã tắt nguồn ${updated.name}'),
+          content: Text(updated.isActive ? 'Enabled source ${updated.name}' : 'Disabled source ${updated.name}'),
           backgroundColor: updated.isActive ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
         ),
@@ -80,7 +80,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Không đổi được nguồn API: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text('Failed to change API source: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _togglingSourceIds.remove(source.id));
@@ -94,7 +94,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Đã gửi yêu cầu đồng bộ. Job sẽ chạy nền.' : 'Không thể kích hoạt đồng bộ.'),
+          content: Text(success ? 'Sync request submitted. Job will run in the background.' : 'Could not trigger sync.'),
           backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
         ),
@@ -103,7 +103,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi đồng bộ: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text('Error triggering sync: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _isTriggeringSync = false);
@@ -121,19 +121,19 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           children: [
             const Icon(Icons.warning_amber_rounded, color: Color(0xFFEF4444)),
             const SizedBox(width: 8),
-            Expanded(child: Text('Xóa dữ liệu mock?', style: GoogleFonts.inter(color: palette.text, fontWeight: FontWeight.w800))),
+            Expanded(child: Text('Delete mock data?', style: GoogleFonts.inter(color: palette.text, fontWeight: FontWeight.w800))),
           ],
         ),
         content: Text(
-          'Hành động này sẽ xóa toàn bộ dữ liệu mock và không thể khôi phục. Chỉ tiếp tục khi bạn chắc chắn đây không phải dữ liệu thật.',
+          'This action will delete all mock data and cannot be undone. Only proceed if you are sure this is not real data.',
           style: GoogleFonts.inter(color: palette.muted, height: 1.45),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Hủy')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626), foregroundColor: Colors.white),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Xóa dữ liệu'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -147,7 +147,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Đã xóa dữ liệu mock' : 'Không thể xóa dữ liệu mock'),
+          content: Text(success ? 'Mock data deleted' : 'Could not delete mock data'),
           backgroundColor: success ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
           behavior: SnackBarBehavior.floating,
         ),
@@ -156,7 +156,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi khi xóa dữ liệu: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
+        SnackBar(content: Text('Error deleting data: $e'), backgroundColor: const Color(0xFFDC2626), behavior: SnackBarBehavior.floating),
       );
     } finally {
       if (mounted) setState(() => _isWipingData = false);
@@ -170,26 +170,26 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
     return Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text('Đồng bộ API', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
+        title: Text('API Sync', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: palette.text),
         actions: [
           _actionButton(
-            tooltip: 'Đồng bộ ngay',
+            tooltip: 'Sync Now',
             icon: Icons.sync_rounded,
             color: const Color(0xFF22C55E),
             loading: _isTriggeringSync,
             onPressed: _triggerSync,
           ),
           _actionButton(
-            tooltip: 'Xóa dữ liệu mock',
+            tooltip: 'Delete mock data',
             icon: Icons.delete_sweep_rounded,
             color: const Color(0xFFEF4444),
             loading: _isWipingData,
             onPressed: _wipeData,
           ),
-          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadSyncData),
+          IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh), onPressed: _loadSyncData),
         ],
         bottom: TabBar(
           controller: _tabController,
@@ -198,8 +198,8 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           unselectedLabelColor: palette.muted,
           labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800),
           tabs: const [
-            Tab(text: 'Nguồn API'),
-            Tab(text: 'Lịch sử'),
+            Tab(text: 'API Sources'),
+            Tab(text: 'History'),
           ],
         ),
       ),
@@ -209,7 +209,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
               ? AdminErrorState(message: _error!, onRetry: _loadSyncData)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Could not connect to Admin API. Displaying mock data.'),
                     Expanded(
                       child: TabBarView(
                         controller: _tabController,
@@ -236,7 +236,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
 
   Widget _buildSourcesTab(AdminPalette palette) {
     if (_sources.isEmpty) {
-      return const AdminEmptyState(icon: Icons.hub_outlined, title: 'Chưa có nguồn API', message: 'Nguồn đồng bộ sẽ xuất hiện sau khi backend trả dữ liệu.');
+      return const AdminEmptyState(icon: Icons.hub_outlined, title: 'No API sources yet', message: 'Synchronization sources will appear when the backend returns data.');
     }
 
     final activeSources = _sources.where((s) => s.isActive).length;
@@ -257,9 +257,9 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('$activeSources/${_sources.length} nguồn đang hoạt động', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: palette.text)),
+                    Text('$activeSources/${_sources.length} sources active', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: palette.text)),
                     const SizedBox(height: 3),
-                    Text('Bật tắt nguồn dữ liệu và kiểm tra giới hạn đồng bộ.', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
+                    Text('Toggle data sources and check sync limits.', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
                   ],
                 ),
               ),
@@ -329,14 +329,14 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           Divider(height: 24, color: palette.border),
           Row(
             children: [
-              _detail('Giới hạn', '${source.rateLimitPerSec}/giây', palette),
-              _detail('Chu kỳ', '${source.syncIntervalHours} giờ', palette),
-              _detail('Lần cuối', formatAdminDate(source.lastSyncedAt), palette),
+              _detail('Limit', '${source.rateLimitPerSec}/sec', palette),
+              _detail('Interval', '${source.syncIntervalHours} hours', palette),
+              _detail('Last Synced', formatAdminDate(source.lastSyncedAt), palette),
             ],
           ),
           if (source.supportedFields.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Text('Lĩnh vực hỗ trợ', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: palette.muted)),
+            Text('Supported Fields', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: palette.muted)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 6,
@@ -364,7 +364,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
 
   Widget _buildHistoryTab(AdminPalette palette) {
     if (_syncJobs.isEmpty) {
-      return const AdminEmptyState(icon: Icons.history_outlined, title: 'Chưa có lịch sử đồng bộ', message: 'Các job đồng bộ sẽ xuất hiện tại đây.');
+      return const AdminEmptyState(icon: Icons.history_outlined, title: 'No sync history yet', message: 'Sync jobs will appear here.');
     }
 
     return ListView.builder(
@@ -383,7 +383,7 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
             : const Color(0xFFF59E0B);
     final started = job.startedAt == null ? null : DateTime.tryParse(job.startedAt!)?.toLocal();
     final finished = job.finishedAt == null ? null : DateTime.tryParse(job.finishedAt!)?.toLocal();
-    final duration = started != null && finished != null ? '${finished.difference(started).inSeconds} giây' : 'Đang chờ';
+    final duration = started != null && finished != null ? '${finished.difference(started).inSeconds} seconds' : 'Pending';
 
     return AdminSurface(
       margin: const EdgeInsets.only(bottom: 10),
@@ -405,10 +405,10 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
           Divider(height: 24, color: palette.border),
           Row(
             children: [
-              _metric('Đã lấy', job.papersFetched.toString(), palette),
-              _metric('Đã thêm', job.papersInserted.toString(), palette),
-              _metric('Cập nhật', job.papersUpdated.toString(), palette),
-              _metric('Thời gian', duration, palette),
+              _metric('Fetched', job.papersFetched.toString(), palette),
+              _metric('Added', job.papersInserted.toString(), palette),
+              _metric('Updated', job.papersUpdated.toString(), palette),
+              _metric('Duration', duration, palette),
             ],
           ),
           if (job.errorMessage != null && job.errorMessage!.isNotEmpty) ...[
@@ -452,9 +452,9 @@ class _SyncManagerScreenState extends State<SyncManagerScreen> with SingleTicker
   String _statusText(String status) {
     switch (status.toLowerCase()) {
       case 'success':
-        return 'Thành công';
+        return 'Success';
       case 'failed':
-        return 'Thất bại';
+        return 'Failed';
       default:
         return status;
     }

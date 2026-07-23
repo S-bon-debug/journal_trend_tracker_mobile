@@ -98,8 +98,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(nextStatus == 0 ? 'Đã mở khóa ${current.fullName}' : 'Đã khóa ${current.fullName}'),
-          backgroundColor: nextStatus == 0 ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+          content: Text(nextStatus == 0 ? 'Unlocked ${current.fullName}' : 'Locked ${current.fullName}'),
+          backgroundColor: nextStatus == 0 ? Colors.green : Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -107,8 +107,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Không đổi được trạng thái: $e'),
-          backgroundColor: const Color(0xFFDC2626),
+          content: Text('Failed to change status: $e'),
+          backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -121,20 +121,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Vô hiệu hóa tài khoản', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
-        content: Text('Bạn có chắc chắn muốn vô hiệu hóa tài khoản của ${user.fullName} (${user.email}) không? Người dùng này sẽ không thể đăng nhập.'),
+        title: Text('Deactivate account', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
+        content: Text('Are you sure you want to deactivate the account of ${user.fullName} (${user.email})? This user will not be able to log in.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: const TextStyle(color: Colors.grey)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-            ),
+          TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Vô hiệu hóa'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Deactivate'),
           ),
         ],
       ),
@@ -166,7 +163,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           avatarUrl: current.avatarUrl,
           provider: current.provider,
           role: current.role,
-          status: 1, // Locked / Deactivated
+          status: 1, 
           lastLoginAt: current.lastLoginAt,
           createdAt: current.createdAt,
           updatedAt: DateTime.now().toIso8601String(),
@@ -177,8 +174,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Đã vô hiệu hóa tài khoản ${current.fullName}'),
-          backgroundColor: const Color(0xFFDC2626),
+          content: Text('Account ${current.fullName} has been deactivated'),
+          backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -186,8 +183,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Không thể vô hiệu hóa tài khoản: $e'),
-          backgroundColor: const Color(0xFFDC2626),
+          content: Text('Cannot deactivate account: $e'),
+          backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -200,7 +197,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     final palette = AdminPalette(context);
     
     String formatDate(String? dateStr) {
-      if (dateStr == null || dateStr.isEmpty) return 'Chưa đăng nhập';
+      if (dateStr == null || dateStr.isEmpty) return 'Never logged in';
       try {
         final date = DateTime.parse(dateStr).toLocal();
         return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
@@ -212,11 +209,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     String getProviderLabel(int provider) {
       switch (provider) {
         case 1:
-          return 'Google OAuth';
+          return 'Google Sign-In';
         case 2:
           return 'GitHub';
         default:
-          return 'Email & Mật khẩu';
+          return 'Email & Password';
       }
     }
 
@@ -238,7 +235,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                'Chi tiết tài khoản',
+                'Account Details',
                 style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text, fontSize: 18),
               ),
             ),
@@ -251,22 +248,22 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             children: [
               const Divider(),
               const SizedBox(height: 8),
-              _detailRow('Họ và tên', user.fullName, palette),
+              _detailRow('Full Name', user.fullName, palette),
               _detailRow('Email', user.email, palette),
-              _detailRow('Vai trò', _roleLabel(user.role), palette, customColor: _getRoleColor(user.role)),
-              _detailRow('Trạng thái', _statusLabel(user.status), palette, customColor: _getStatusColor(user.status)),
-              _detailRow('Hình thức đăng ký', getProviderLabel(user.provider), palette),
-              _detailRow('Đăng nhập cuối', formatDate(user.lastLoginAt), palette),
-              _detailRow('Ngày tham gia', formatDate(user.createdAt), palette),
-              _detailRow('Cập nhật cuối', formatDate(user.updatedAt), palette),
-              _detailRow('Mã người dùng (UUID)', user.id, palette, isSelectable: true),
+              _detailRow('Role', _roleLabel(user.role), palette, customColor: _getRoleColor(user.role)),
+              _detailRow('Status', _statusLabel(user.status), palette, customColor: _getStatusColor(user.status)),
+              _detailRow('Registration Type', getProviderLabel(user.provider), palette),
+              _detailRow('Last Login', formatDate(user.lastLoginAt), palette),
+              _detailRow('Date Joined', formatDate(user.createdAt), palette),
+              _detailRow('Last Update', formatDate(user.updatedAt), palette),
+              _detailRow('User ID (UUID)', user.id, palette, isSelectable: true),
             ],
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Đóng', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
+            child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: AppTheme.primaryColor)),
           ),
         ],
       ),
@@ -313,12 +310,12 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     return Scaffold(
       backgroundColor: palette.background,
       appBar: AppBar(
-        title: Text('Người dùng', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
+        title: Text('Users', style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: palette.text)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: palette.text),
         actions: [
-          IconButton(tooltip: 'Làm mới', icon: const Icon(Icons.refresh), onPressed: _loadUsers),
+          IconButton(tooltip: 'Refresh', icon: const Icon(Icons.refresh), onPressed: _loadUsers),
         ],
       ),
       body: _isLoading
@@ -327,7 +324,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               ? AdminErrorState(message: _error!, onRetry: _loadUsers)
               : Column(
                   children: [
-                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Chưa kết nối được API Admin. Đang hiển thị dữ liệu giả lập.'),
+                    if (_apiService.isUsingMock) const AdminInfoBanner(message: 'Could not connect to Admin API. Displaying mock data.'),
                     Expanded(
                       child: ListView(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
@@ -341,8 +338,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                   height: 300,
                                   child: AdminEmptyState(
                                     icon: Icons.person_search_outlined,
-                                    title: 'Không tìm thấy người dùng',
-                                    message: 'Thử đổi từ khóa, vai trò hoặc trạng thái lọc.',
+                                    title: 'No users found',
+                                    message: 'Try changing search query, role, or status filter.',
                                   ),
                                 )
                               : Column(
@@ -379,9 +376,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Quản lý tài khoản', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, color: palette.text)),
+                    Text('Account Management', style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w700, color: palette.text)),
                     const SizedBox(height: 3),
-                    Text('${_filteredUsers.length}/${_allUsers.length} người dùng phù hợp bộ lọc', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
+                    Text('${_filteredUsers.length}/${_allUsers.length} users matching filters', style: GoogleFonts.inter(fontSize: 13, color: palette.muted)),
                   ],
                 ),
               ),
@@ -390,8 +387,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           const SizedBox(height: 16),
           Row(
             children: [
-              _metric('Hoạt động', activeUsers.toString(), const Color(0xFF22C55E), palette),
-              _metric('Đã khóa', lockedUsers.toString(), const Color(0xFFEF4444), palette),
+              _metric('Active', activeUsers.toString(), const Color(0xFF22C55E), palette),
+              _metric('Locked', lockedUsers.toString(), const Color(0xFFEF4444), palette),
               _metric('Admin', adminUsers.toString(), AppTheme.primaryColor, palette),
             ],
           ),
@@ -424,7 +421,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             style: GoogleFonts.inter(color: palette.text),
             decoration: InputDecoration(
               prefixIcon: Icon(Icons.search, color: palette.muted),
-              hintText: 'Tìm theo tên, email hoặc UUID',
+              hintText: 'Search by name, email, or UUID',
               suffixIcon: _searchQuery.isEmpty
                   ? null
                   : IconButton(
@@ -474,18 +471,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
   }
 
   List<DropdownMenuItem<int>> _roleItems() => const [
-        DropdownMenuItem(value: -1, child: Text('Tất cả vai trò')),
-        DropdownMenuItem(value: 0, child: Text('Nhà nghiên cứu')),
-        DropdownMenuItem(value: 1, child: Text('Giảng viên')),
-        DropdownMenuItem(value: 2, child: Text('Sinh viên')),
-        DropdownMenuItem(value: 3, child: Text('Quản trị viên')),
+        DropdownMenuItem(value: -1, child: Text('All Roles')),
+        DropdownMenuItem(value: 0, child: Text('Researcher')),
+        DropdownMenuItem(value: 1, child: Text('Lecturer')),
+        DropdownMenuItem(value: 2, child: Text('Student')),
+        DropdownMenuItem(value: 3, child: Text('Administrator')),
       ];
 
   List<DropdownMenuItem<int>> _statusItems() => const [
-        DropdownMenuItem(value: -1, child: Text('Tất cả trạng thái')),
-        DropdownMenuItem(value: 0, child: Text('Đang hoạt động')),
-        DropdownMenuItem(value: 1, child: Text('Đã khóa')),
-        DropdownMenuItem(value: 2, child: Text('Chờ duyệt')),
+        DropdownMenuItem(value: -1, child: Text('All Statuses')),
+        DropdownMenuItem(value: 0, child: Text('Active')),
+        DropdownMenuItem(value: 1, child: Text('Locked')),
+        DropdownMenuItem(value: 2, child: Text('Pending Approval')),
       ];
 
   Widget _getProviderPill(int provider) {
@@ -560,7 +557,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               IconButton.filledTonal(
-                tooltip: 'Xem chi tiết',
+                tooltip: 'View details',
                 onPressed: () => _showUserDetails(user),
                 icon: const Icon(Icons.info_outline_rounded),
                 color: AppTheme.primaryColor,
@@ -570,13 +567,13 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   ? const SizedBox(width: 36, height: 36, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor))
                   : user.status == 1
                       ? IconButton.filledTonal(
-                          tooltip: 'Mở khóa tài khoản',
+                          tooltip: 'Unlock account',
                           onPressed: () => _toggleUserStatus(user),
                           icon: const Icon(Icons.lock_open_rounded),
                           color: const Color(0xFF16A34A),
                         )
                       : IconButton.filledTonal(
-                          tooltip: 'Vô hiệu hóa tài khoản',
+                          tooltip: 'Deactivate account',
                           onPressed: () => _confirmDeactivateUser(user),
                           icon: const Icon(Icons.delete_outline_rounded),
                           color: const Color(0xFFDC2626),
@@ -600,22 +597,22 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       case 3:
         return 'Admin';
       case 1:
-        return 'Giảng viên';
+        return 'Lecturer';
       case 0:
-        return 'Nghiên cứu';
+        return 'Researcher';
       default:
-        return 'Sinh viên';
+        return 'Student';
     }
   }
 
   String _statusLabel(int status) {
     switch (status) {
       case 0:
-        return 'Hoạt động';
+        return 'Active';
       case 1:
-        return 'Đã khóa';
+        return 'Locked';
       default:
-        return 'Chờ duyệt';
+        return 'Pending';
     }
   }
 
