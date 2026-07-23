@@ -224,7 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }).toList();
 
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
 
     return Scaffold(
@@ -323,7 +323,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   final item = filteredList[index];
                                   final isRead = item.isRead || _locallyReadIds.contains(item.id);
                                   
-                                  final isDark = Theme.of(context).brightness == Brightness.dark;
+                                  const isDark = false; // Force light theme
                                   final textColor = isDark ? Colors.white : Colors.black87;
                                   final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
                                   final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
@@ -419,7 +419,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildFilterChip(String value) {
     final isSelected = _filter == value;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final chipBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
     final chipSelectedBg = Colors.purpleAccent.withOpacity(0.15);
     final labelColor = isSelected 

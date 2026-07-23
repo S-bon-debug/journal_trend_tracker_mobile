@@ -169,132 +169,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
     }
   }
 
-  Future<void> _showDeepAnalysisBottomSheet() async {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // Allow it to exceed half screen
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.analytics, color: Colors.deepPurple, size: 28),
-                    SizedBox(width: 12),
-                    Text(
-                      'Phân tích chuyên sâu PDF',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Chọn cách bạn muốn cung cấp file PDF để AI có thể đọc và phân tích sâu toàn bộ bài báo.',
-                  style: TextStyle(fontSize: 15, color: Colors.grey.shade700, height: 1.4),
-                ),
-                const SizedBox(height: 24),
-                
-                // Option 1: Auto Extract
-                InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleAutoExtract();
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.deepPurple.withOpacity(0.3)),
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.deepPurple.shade50,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4)],
-                          ),
-                          child: const Icon(Icons.auto_awesome, color: Colors.deepPurple),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Tự động tải từ Link', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.deepPurple)),
-                              SizedBox(height: 4),
-                              Text('Hệ thống tự tải PDF từ nhà xuất bản (có thể bị chặn nếu bảo mật cao).', style: TextStyle(fontSize: 13, color: Colors.black54)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Option 2: Manual Upload
-                InkWell(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _handleManualUpload();
-                  },
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(16),
-                      color: Colors.white,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.upload_file, color: Colors.grey),
-                        ),
-                        const SizedBox(width: 16),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Tải lên thủ công (Khuyên dùng)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                              SizedBox(height: 4),
-                              Text('Tự tải PDF về máy và Upload. Tỉ lệ thành công 100%.', style: TextStyle(fontSize: 13, color: Colors.black54)),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ));
-      },
-    );
-  }
+
 
   Future<void> _handleAutoExtract() async {
     if (_isExtracting) return;
@@ -440,9 +315,9 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.85,
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -452,7 +327,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('✨ Kết quả phân tích', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                IconButton(icon: const Icon(Icons.close, color: Colors.black54), onPressed: () => Navigator.pop(context)),
               ],
             ),
             const Divider(),
@@ -485,7 +360,7 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
             children: [
               Icon(icon, color: Colors.deepPurple, size: 20),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
             ],
           ),
           const SizedBox(height: 8),
@@ -493,13 +368,13 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.deepPurple.withOpacity(0.05),
+              color: Colors.deepPurple.shade50,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.deepPurple.withOpacity(0.1)),
             ),
             child: Text(
               content.isEmpty ? 'Không có thông tin.' : content,
-              style: const TextStyle(fontSize: 15, height: 1.5),
+              style: const TextStyle(fontSize: 15, height: 1.5, color: Colors.black87),
             ),
           ),
         ],
@@ -642,93 +517,70 @@ class _PaperDetailScreenState extends State<PaperDetailScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Builder(
-                  builder: (context) {
-                    final pdfUrlToUse = (_paper!.pdfUrl != null && _paper!.pdfUrl!.isNotEmpty) 
-                        ? _paper!.pdfUrl 
-                        : (widget.fallbackPdfUrl != null && widget.fallbackPdfUrl!.isNotEmpty) 
-                            ? widget.fallbackPdfUrl 
-                            : null;
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 12),
+                    
 
-                    if (pdfUrlToUse != null) {
-                      return Column(
-                        children: [
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _handleAutoExtract,
-                              icon: const Icon(Icons.analytics),
-                              label: const Text('Download & Deep Analyze PDF', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.red[600],
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.85,
+                        child: ElevatedButton.icon(
+                          onPressed: _handleManualUpload,
+                          icon: const Icon(Icons.upload_file),
+                          label: const Text('✨ Phân tích chuyên sâu (Upload PDF)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _showDeepAnalysisBottomSheet,
-                      icon: const Icon(Icons.analytics),
-                      label: const Text('✨ Phân tích chuyên sâu', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Colors.deepPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                    if (_paper!.url != null && _paper!.url!.isNotEmpty || _paper!.doi != null && _paper!.doi!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.85,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              var urlString = _paper!.url != null && _paper!.url!.isNotEmpty ? _paper!.url! : _paper!.doi!;
+                              if (!urlString.startsWith('http')) {
+                                urlString = 'https://doi.org/$urlString';
+                              }
+                              final uri = Uri.parse(urlString);
+                              try {
+                                await launchUrl(uri, mode: LaunchMode.externalApplication);
+                              } catch (e) {
+                                if (mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Could not open the link')),
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.open_in_new),
+                            label: const Text('Đọc toàn văn bài báo', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              backgroundColor: Theme.of(context).primaryColor,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                        ],
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
+                  ],
                 ),
-
-                if (_paper!.url != null && _paper!.url!.isNotEmpty || _paper!.doi != null && _paper!.doi!.isNotEmpty) ...[
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        var urlString = _paper!.url != null && _paper!.url!.isNotEmpty ? _paper!.url! : _paper!.doi!;
-                        if (!urlString.startsWith('http')) {
-                          urlString = 'https://doi.org/$urlString';
-                        }
-                        final uri = Uri.parse(urlString);
-                        try {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Could not open the link')),
-                            );
-                          }
-                        }
-                      },
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('Read Full Paper', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        backgroundColor: Theme.of(context).primaryColor,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
 
                 // We replaced Journal and Authors to the top. Just hiding the old blocks.
 

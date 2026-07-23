@@ -205,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final scaffoldBg = theme.scaffoldBackgroundColor;
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
@@ -362,7 +362,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _showAvatarPicker() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
 
@@ -470,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildAvatarSection() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
     final textColorTertiary = isDark ? Colors.white54 : Colors.black45;
@@ -594,7 +594,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildQuickStatsCard() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final cardColor = isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02);
     final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
     final dividerColor = isDark ? Colors.white10 : Colors.black12;
@@ -638,7 +638,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildStatItem(IconData icon, String value, String label) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white54 : Colors.black54;
 
@@ -714,7 +714,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required int maxLines,
   }) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
     final inputBg = enabled 
@@ -763,7 +763,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildResearchInterestsSection() {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    const isDark = false; // Force light theme
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
     final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);

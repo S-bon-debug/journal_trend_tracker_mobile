@@ -123,7 +123,7 @@ class _PapersScreenState extends State<PapersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Colors.grey[50], // Force light background
       body: SafeArea(
         child: Column(
           children: [
@@ -160,7 +160,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildHeader() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     final headerBg = isDark ? const Color(0xFF16161E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF1A1D1E);
     
@@ -200,7 +200,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildIdeaInputBox() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -281,7 +281,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildSuggestionsBox() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     
     final suggestions = [
       "AI support for student job seeking in university",
@@ -345,7 +345,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildTrendingPapersBox() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
 
     if (_isLoadingTrending) {
       return const Center(child: CircularProgressIndicator());
@@ -504,7 +504,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildSummaryCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -561,7 +561,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildMatrixTable() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     
     return Container(
       decoration: BoxDecoration(
@@ -661,7 +661,7 @@ class _PapersScreenState extends State<PapersScreen> {
   }
 
   Widget _buildPaperCard(GapMatrixPaperDto paper) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = false; // Forced light theme
     return InkWell(
       onTap: () {
         Navigator.push(

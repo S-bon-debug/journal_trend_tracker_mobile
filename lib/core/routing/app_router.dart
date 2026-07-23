@@ -90,41 +90,56 @@ class AppRouter {
         path: '/admin',
         builder: (context, state) => const AdminDashboardScreen(),
       ),
-      ShellRoute(
-        navigatorKey: _shellNavigatorKey,
-        builder: (context, state, child) {
-          return MainNavigationScaffold(child: child);
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainNavigationScaffold(navigationShell: navigationShell);
         },
-        routes: [
-          GoRoute(
-            path: '/trends',
-            builder: (context, state) => const TrendsDashboardScreen(),
-          ),
-          GoRoute(
-            path: '/export',
-            builder: (context, state) => const ExportReportScreen(),
-          ),
-          GoRoute(
-            path: '/papers',
-            builder: (context, state) => const PapersScreen(),
+        branches: [
+          StatefulShellBranch(
             routes: [
               GoRoute(
-                path: 'details/:id',
-                parentNavigatorKey: _rootNavigatorKey,
-                builder: (context, state) {
-                  final id = state.pathParameters['id'] ?? '';
-                  return PaperDetailScreen(paperId: id);
-                },
+                path: '/trends',
+                builder: (context, state) => const TrendsDashboardScreen(),
               ),
             ],
           ),
-          GoRoute(
-            path: '/notifications',
-            builder: (context, state) => const NotificationsScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/export',
+                builder: (context, state) => const ExportReportScreen(),
+              ),
+              GoRoute(
+                path: '/papers',
+                builder: (context, state) => const PapersScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'details/:id',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) {
+                      final id = state.pathParameters['id'] ?? '';
+                      return PaperDetailScreen(paperId: id);
+                    },
+                  ),
+                ],
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/profile',
-            builder: (context, state) => const ProfileScreen(),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/notifications',
+                builder: (context, state) => const NotificationsScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileScreen(),
+              ),
+            ],
           ),
         ],
       ),
@@ -133,43 +148,24 @@ class AppRouter {
 }
 
 class MainNavigationScaffold extends StatelessWidget {
-  final Widget child;
+  final StatefulNavigationShell navigationShell;
 
-  const MainNavigationScaffold({super.key, required this.child});
-
-  int _calculateSelectedIndex(BuildContext context) {
-    final location = GoRouterState.of(context).matchedLocation;
-    if (location.startsWith('/trends')) return 0;
-    if (location.startsWith('/papers')) return 1;
-    if (location.startsWith('/notifications')) return 2;
-    if (location.startsWith('/profile')) return 3;
-    return 0;
-  }
+  const MainNavigationScaffold({super.key, required this.navigationShell});
 
   void _onItemTapped(int index, BuildContext context) {
-    switch (index) {
-      case 0:
-        context.go('/trends');
-        break;
-      case 1:
-        context.go('/papers');
-        break;
-      case 2:
-        context.go('/notifications');
-        break;
-      case 3:
-        context.go('/profile');
-        break;
-    }
+    navigationShell.goBranch(
+      index,
+      initialLocation: index == navigationShell.currentIndex,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selectedIndex = _calculateSelectedIndex(context);
+    final selectedIndex = navigationShell.currentIndex;
 
     return Scaffold(
-      body: child,
+      body: navigationShell,
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           border: Border(
