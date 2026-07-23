@@ -65,7 +65,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    const isDark = false; // Force light theme
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     
     // Background gradient for a modern feel
@@ -145,7 +145,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
   }
 
   Widget _buildSectionTitle(String title, IconData icon, {Color? color}) {
-    const isDark = false; // Force light theme
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       children: [
         Icon(icon, size: 22, color: color ?? (isDark ? Colors.blueAccent : Colors.blue)),
@@ -247,7 +247,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
               forecastSpots.add(FlSpot(stat.year.toDouble() + 1, stat.forecastPaperCount!.toDouble()));
             }
           }
-          const isDark = false; // Force light theme
+          final isDark = Theme.of(context).brightness == Brightness.dark;
           final cardColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
           final borderColor = isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05);
           
@@ -343,7 +343,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
           final topics = snapshot.data!;
           return Column(
             children: topics.map((topic) {
-              const isDark = false; // Force light theme
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               final growth = topic.growthRate ?? 0.0;
               final isPositive = growth >= 0;
               
@@ -428,7 +428,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
             runSpacing: 10.0,
             children: snapshot.data!.map((keyword) {
               final isSelected = _selectedKeywordId == keyword.keywordId;
-              const isDark = false; // Force light theme
+              final isDark = Theme.of(context).brightness == Brightness.dark;
               return InkWell(
                 onTap: () => _onKeywordSelected(keyword.keywordId),
                 borderRadius: BorderRadius.circular(20),
@@ -482,7 +482,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
               clipBehavior: Clip.none,
               itemBuilder: (context, index) {
                 final author = snapshot.data![index];
-                const isDark = false; // Force light theme
+                final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
                   width: 180,
                   margin: const EdgeInsets.only(right: 16, bottom: 10),
@@ -533,7 +533,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
               clipBehavior: Clip.none,
               itemBuilder: (context, index) {
                 final journal = snapshot.data![index];
-                const isDark = false; // Force light theme
+                final isDark = Theme.of(context).brightness == Brightness.dark;
                 return Container(
                   width: 220,
                   margin: const EdgeInsets.only(right: 16, bottom: 10),
