@@ -100,15 +100,18 @@ class AppRouter {
               GoRoute(
                 path: '/trends',
                 builder: (context, state) => const TrendsDashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'export',
+                    parentNavigatorKey: _rootNavigatorKey,
+                    builder: (context, state) => const ExportReportScreen(),
+                  ),
+                ],
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
-              GoRoute(
-                path: '/export',
-                builder: (context, state) => const ExportReportScreen(),
-              ),
               GoRoute(
                 path: '/papers',
                 builder: (context, state) => const PapersScreen(),

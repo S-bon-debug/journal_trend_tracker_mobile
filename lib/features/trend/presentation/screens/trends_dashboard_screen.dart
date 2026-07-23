@@ -93,7 +93,7 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.file_download_outlined, color: textColor),
-            onPressed: () => context.push('/export'),
+            onPressed: () => context.push('/trends/export'),
           ),
           IconButton(
             icon: Icon(Icons.refresh_rounded, color: textColor),
