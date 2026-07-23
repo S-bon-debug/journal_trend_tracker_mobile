@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../storage/token_storage.dart';
@@ -164,46 +165,107 @@ class MainNavigationScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final selectedIndex = navigationShell.currentIndex;
+
+    const navItems = [
+      (Icons.dashboard_outlined, Icons.dashboard_rounded, 'Trends'),
+      (Icons.library_books_outlined, Icons.library_books_rounded, 'Papers'),
+      (Icons.notifications_outlined, Icons.notifications_rounded, 'Thông báo'),
+      (Icons.person_outline_rounded, Icons.person_rounded, 'Hồ sơ'),
+    ];
+
+    const activeGradients = [
+      [Color(0xFF3B82F6), Color(0xFF6366F1)],
+      [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+      [Color(0xFF06B6D4), Color(0xFF6366F1)],
+      [Color(0xFFEC4899), Color(0xFF8B5CF6)],
+    ];
 
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: theme.dividerColor, width: 0.5),
+      bottomNavigationBar: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.7)
+                  : Colors.white.withValues(alpha: 0.85),
+              border: Border(
+                top: BorderSide(
+                  color: isDark
+                      ? Colors.white.withValues(alpha: 0.08)
+                      : Colors.black.withValues(alpha: 0.06),
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: List.generate(navItems.length, (index) {
+                    final isSelected = selectedIndex == index;
+                    final item = navItems[index];
+                    final grad = activeGradients[index];
+
+                    return Expanded(
+                      child: GestureDetector(
+                        onTap: () => _onItemTapped(index, context),
+                        behavior: HitTestBehavior.opaque,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: EdgeInsets.all(isSelected ? 10.0 : 8.0),
+                                decoration: isSelected
+                                    ? BoxDecoration(
+                                        gradient: LinearGradient(colors: grad),
+                                        borderRadius: BorderRadius.circular(14),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: grad[0].withValues(alpha: 0.35),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                child: Icon(
+                                  isSelected ? item.$2 : item.$1,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : (isDark ? Colors.white38 : Colors.black38),
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item.$3,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                  color: isSelected
+                                      ? grad[0]
+                                      : (isDark ? Colors.white38 : Colors.black38),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          type: BottomNavigationBarType.fixed,
-          currentIndex: selectedIndex,
-          onTap: (index) => _onItemTapped(index, context),
-          backgroundColor: theme.bottomNavigationBarTheme.backgroundColor,
-          selectedItemColor: theme.bottomNavigationBarTheme.selectedItemColor,
-          unselectedItemColor: theme.bottomNavigationBarTheme.unselectedItemColor,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Trends',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.library_books_outlined),
-              activeIcon: Icon(Icons.library_books),
-              label: 'Papers',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_outlined),
-              activeIcon: Icon(Icons.notifications),
-              label: 'Notifications',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline),
-              activeIcon: Icon(Icons.person),
-              label: 'Profile',
-            ),
-          ],
         ),
       ),
     );

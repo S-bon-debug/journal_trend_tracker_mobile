@@ -23,7 +23,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationDto(
           id: 'mock_1',
           type: 'new_paper',
-          title: '[Giả lập] Bài báo mới được xuất bản',
+          title: 'Bài báo mới được xuất bản',
           body: 'Một bài báo mới phù hợp với từ khóa bạn đang theo dõi "Machine Learning" đã được xuất bản: "Optimizing Neural Network Architectures via Evolutionary Algorithms".',
           isRead: false,
           createdAt: DateTime.now().subtract(const Duration(minutes: 10)).toIso8601String(),
@@ -31,7 +31,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationDto(
           id: 'mock_2',
           type: 'sync',
-          title: '[Giả lập] Đồng bộ dữ liệu thành công',
+          title: 'Đồng bộ dữ liệu thành công',
           body: 'Cơ sở dữ liệu xu hướng tạp chí khoa học đã được cập nhật thành công với 12 xu hướng mới được phân tích.',
           isRead: false,
           createdAt: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
@@ -39,7 +39,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         NotificationDto(
           id: 'mock_3',
           type: 'default',
-          title: '[Giả lập] Cập nhật thông tin hệ thống',
+          title: 'Cập nhật thông tin hệ thống',
           body: 'Thông tin tùy chọn nghiên cứu ưu tiên của bạn đã được lưu lại thành công. Bạn sẽ nhận được các bài báo liên quan nhất.',
           isRead: true,
           createdAt: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
@@ -187,29 +187,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _getIconForType(String type) {
+    List<Color> gradient;
     IconData icon;
-    Color color;
     switch (type) {
       case 'paper':
       case 'new_paper':
-        icon = Icons.description;
-        color = Colors.blueAccent;
+        icon = Icons.description_rounded;
+        gradient = [const Color(0xFF6366F1), const Color(0xFF8B5CF6)];
         break;
       case 'sync':
-        icon = Icons.sync_outlined;
-        color = Colors.greenAccent;
+        icon = Icons.sync_rounded;
+        gradient = [const Color(0xFF10B981), const Color(0xFF059669)];
         break;
       default:
-        icon = Icons.notifications_none_outlined;
-        color = Colors.orangeAccent;
+        icon = Icons.notifications_rounded;
+        gradient = [const Color(0xFFF59E0B), const Color(0xFFD97706)];
     }
     return Container(
-      padding: const EdgeInsets.all(8),
+      width: 44, height: 44,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        shape: BoxShape.circle,
+        gradient: LinearGradient(colors: gradient),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: gradient[0].withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Icon(icon, color: color, size: 20),
+      child: Icon(icon, color: Colors.white, size: 20),
     );
   }
 
@@ -229,227 +236,273 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Notifications',
-          style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: textColor),
-        actions: [
-          if (!_isLoading && _error == null)
-            TextButton.icon(
-              icon: const Icon(Icons.done_all, size: 18, color: Colors.purpleAccent),
-              label: Text('Mark all read', style: GoogleFonts.inter(color: Colors.purpleAccent, fontWeight: FontWeight.w600)),
-              onPressed: _markAllAsRead,
+      body: Column(
+        children: [
+          // Gradient Header
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF06B6D4), Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
             ),
-        ],
-      ),      body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.purpleAccent))
-          : _error != null
-              ? Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Connection error: $_error', 
-                          style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black87), 
-                          textAlign: TextAlign.center
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadNotifications,
-                          style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-                          child: const Text('Retry'),
-                        )
-                      ],
-                    ),
-                  ),
-                )
-              : Column(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 8, 16),
+                child: Row(
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Row(
+                    const Icon(Icons.notifications_rounded, color: Colors.white, size: 26),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Thông báo',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 22,
+                        color: Colors.white,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (!_isLoading && _error == null)
+                      TextButton.icon(
+                        icon: const Icon(Icons.done_all, size: 17, color: Colors.white),
+                        label: const Text('Mark all', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                        onPressed: _markAllAsRead,
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.15),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: _buildBodyContent(filteredList, isDark),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBodyContent(List<NotificationDto> filteredList, bool isDark) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFF8B5CF6)));
+    }
+
+    if (_error != null) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+              const SizedBox(height: 16),
+              Text(
+                'Connection error: $_error', 
+                style: GoogleFonts.inter(color: isDark ? Colors.white70 : Colors.black87), 
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _loadNotifications,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+          child: Row(
+            children: [
+              _buildFilterChip('All'),
+              const SizedBox(width: 8),
+              _buildFilterChip('Unread'),
+            ],
+          ),
+        ),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadNotifications,
+            color: Colors.purpleAccent,
+            child: filteredList.isEmpty
+                ? SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Container(
+                      height: MediaQuery.of(context).size.height * 0.6,
+                      alignment: Alignment.center,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _buildFilterChip('All'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('Unread'),
+                          Icon(
+                            Icons.notifications_off_outlined, 
+                            size: 64, 
+                            color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No notifications found.',
+                            style: GoogleFonts.inter(
+                              color: isDark ? Colors.white38 : Colors.black38, 
+                              fontSize: 16,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    Expanded(
-                      child: RefreshIndicator(
-                        onRefresh: _loadNotifications,
-                        color: Colors.purpleAccent,
-                        child: filteredList.isEmpty
-                            ? SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                child: Container(
-                                  height: MediaQuery.of(context).size.height * 0.6,
-                                  alignment: Alignment.center,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        Icons.notifications_off_outlined, 
-                                        size: 64, 
-                                        color: isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.1)
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Text(
-                                        'No notifications found.',
-                                        style: GoogleFonts.inter(
-                                          color: isDark ? Colors.white38 : Colors.black38, 
-                                          fontSize: 16
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                physics: const BouncingScrollPhysics(),
-                                padding: const EdgeInsets.all(16.0),
-                                itemCount: filteredList.length,
-                                separatorBuilder: (context, index) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final item = filteredList[index];
-                                  final isRead = item.isRead || _locallyReadIds.contains(item.id);
-                                  
-                                  final isDark = Theme.of(context).brightness == Brightness.dark;
-                                  final textColor = isDark ? Colors.white : Colors.black87;
-                                  final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
-                                  final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
-                                  
-                                  final cardBg = isRead
-                                      ? (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02))
-                                      : (isDark ? Colors.purpleAccent.withOpacity(0.04) : Colors.purpleAccent.withOpacity(0.06));
-                                      
-                                  final cardBorderColor = isRead
-                                      ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06))
-                                      : (isDark ? Colors.purpleAccent.withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.25));
+                  )
+                : ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.all(16.0),
+                    itemCount: filteredList.length,
+                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = filteredList[index];
+                      final isRead = item.isRead || _locallyReadIds.contains(item.id);
+                      
+                      final textColor = isDark ? Colors.white : Colors.black87;
+                      final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
+                      final textColorTertiary = isDark ? Colors.white30 : Colors.black38;
+                      
+                      final cardBg = isRead
+                          ? (isDark ? Colors.white.withOpacity(0.02) : Colors.black.withOpacity(0.02))
+                          : (isDark ? Colors.purpleAccent.withOpacity(0.04) : Colors.purpleAccent.withOpacity(0.06));
+                          
+                      final cardBorderColor = isRead
+                          ? (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06))
+                          : (isDark ? Colors.purpleAccent.withOpacity(0.15) : Colors.purpleAccent.withOpacity(0.25));
 
-                                  return Container(
-                                    decoration: BoxDecoration(
-                                      color: cardBg,
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(
-                                        color: cardBorderColor,
-                                      ),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(16),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          onTap: () => _markAsRead(item),
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(16.0),
-                                            child: Row(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                _getIconForType(item.type),
-                                                const SizedBox(width: 16),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Row(
-                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                        children: [
-                                                          Expanded(
-                                                            child: Text(
-                                                              item.title,
-                                                              style: GoogleFonts.inter(
-                                                                fontSize: 14,
-                                                                fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
-                                                                color: textColor,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          if (!isRead)
-                                                            Container(
-                                                              width: 8,
-                                                              height: 8,
-                                                              decoration: const BoxDecoration(
-                                                                color: Colors.purpleAccent,
-                                                                shape: BoxShape.circle,
-                                                              ),
-                                                            ),
-                                                        ],
-                                                      ),
-                                                      const SizedBox(height: 6),
-                                                      Text(
-                                                        item.body,
-                                                        style: GoogleFonts.inter(
-                                                          fontSize: 13,
-                                                          color: isRead ? textColorSecondary : textColor,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(height: 8),
-                                                      Text(
-                                                        _formatTimestamp(item.createdAt),
-                                                        style: GoogleFonts.inter(fontSize: 11, color: textColorTertiary),
-                                                      ),
-                                                    ],
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: cardBg,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: cardBorderColor,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _markAsRead(item),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _getIconForType(item.type),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  item.title.replaceAll('[Giả lập] ', '').replaceAll('[Giả lập]', ''),
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 14,
+                                                    fontWeight: isRead ? FontWeight.w500 : FontWeight.bold,
+                                                    color: textColor,
                                                   ),
                                                 ),
-                                              ],
+                                              ),
+                                              if (!isRead)
+                                                Container(
+                                                  width: 8,
+                                                  height: 8,
+                                                  decoration: const BoxDecoration(
+                                                    color: Colors.purpleAccent,
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            item.body,
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              color: isRead ? textColorSecondary : textColor,
                                             ),
                                           ),
-                                        ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            _formatTimestamp(item.createdAt),
+                                            style: GoogleFonts.inter(fontSize: 11, color: textColorTertiary),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                  );
-                                },
+                                  ],
+                                ),
                               ),
-                      ),
-                    ),
-                  ],
-                ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildFilterChip(String value) {
     final isSelected = _filter == value;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final chipBg = isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.03);
-    final chipSelectedBg = Colors.purpleAccent.withOpacity(0.15);
-    final labelColor = isSelected 
-        ? Colors.purpleAccent 
-        : (isDark ? Colors.white70 : Colors.black87);
-    final chipBorder = isSelected 
-        ? Colors.purpleAccent 
-        : (isDark ? Colors.transparent : Colors.black.withOpacity(0.1));
+    final chipBg = isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.04);
 
-    return ChoiceChip(
-      label: Text(value),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _filter = value;
-          });
-        }
-      },
-      backgroundColor: chipBg,
-      selectedColor: chipSelectedBg,
-      labelStyle: GoogleFonts.inter(
-        color: labelColor,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return GestureDetector(
+      onTap: () => setState(() => _filter = value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                )
+              : null,
+          color: isSelected ? null : chipBg,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [],
+        ),
+        child: Text(
+          value,
+          style: TextStyle(
+            color: isSelected ? Colors.white : (isDark ? Colors.white60 : Colors.black54),
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
       ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: chipBorder),
-      ),
-      showCheckmark: false,
     );
   }
 }

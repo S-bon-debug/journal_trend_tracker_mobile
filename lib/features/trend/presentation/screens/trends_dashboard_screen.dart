@@ -172,11 +172,11 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
               final isWide = constraints.maxWidth > 800;
               return GridView.count(
                 crossAxisCount: isWide ? 4 : 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                childAspectRatio: isWide ? 2.0 : 1.5,
+                childAspectRatio: isWide ? 2.8 : 2.1,
                 children: [
                   _buildStatCard('Total Papers', '${data.totalPapers}', Icons.article_rounded, const [Color(0xFF3B82F6), Color(0xFF2563EB)]),
                   _buildStatCard('Authors', '${data.totalAuthors}', Icons.people_rounded, const [Color(0xFF8B5CF6), Color(0xFF7C3AED)]),
@@ -196,27 +196,33 @@ class _TrendsDashboardScreenState extends State<TrendsDashboardScreen> {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
-          BoxShadow(color: gradientColors[1].withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: gradientColors[1].withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3)),
         ],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white70, size: 20),
-              const SizedBox(width: 8),
-              Text(title, style: GoogleFonts.inter(color: Colors.white.withOpacity(0.9), fontSize: 13, fontWeight: FontWeight.w500)),
+              Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 15),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  title, 
+                  style: GoogleFonts.inter(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, fontWeight: FontWeight.w600),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
-          const Spacer(),
+          const SizedBox(height: 4),
           Text(
             value,
-            style: GoogleFonts.inter(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800),
+            style: GoogleFonts.inter(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800),
           ),
         ],
       ),

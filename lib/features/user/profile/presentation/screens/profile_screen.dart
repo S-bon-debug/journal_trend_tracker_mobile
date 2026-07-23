@@ -7,7 +7,8 @@ import 'bookmarks_screen.dart';
 import '../../data/services/user_api_service.dart';
 
 import '../../../auth/data/services/auth_api_service.dart';
-import '../../../../settings/presentation/screens/settings_screen.dart';
+import '../../../../../core/theme_manager.dart';
+import '../../../../admin/presentation/screens/admin_dashboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -38,6 +39,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   int _bookmarkCount = 0;
   int _followCount = 0;
+
+  // Settings state
+  bool _isAdmin = false;
 
   // Controllers
   late TextEditingController _nameController;
@@ -104,6 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _name = account.fullName;
           _email = account.email;
           _role = _mapRoleToString(account.role);
+          _isAdmin = (account.role == 3);
           _nameController.text = _name;
           if (account.avatarUrl != null && account.avatarUrl!.isNotEmpty) {
             _customAvatarUrl = account.avatarUrl;
@@ -223,18 +228,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         actions: [
           if (!_isEditing && !_isLoading && _error == null) ...[
             IconButton(
-              icon: const Icon(Icons.settings, color: Colors.purpleAccent),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                ).then((_) {
-                  // Reload profile on return to check if anything updated (e.g. role change)
-                  _loadProfileData();
-                });
-              },
-            ),
-            IconButton(
               icon: const Icon(Icons.logout, color: Colors.redAccent),
               onPressed: () async {
                 final confirm = await showDialog<bool>(
@@ -329,12 +322,214 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 24),
                         _buildResearchInterestsSection(),
                         const SizedBox(height: 32),
+                        // --- Settings Section ---
+                        if (!_isEditing) ...[
+                          if (_isAdmin) ...[
+                            _buildSectionLabel('Quản trị hệ thống'),
+                            const SizedBox(height: 8),
+                            _buildAdminCard(),
+                            const SizedBox(height: 24),
+                          ],
+                          _buildSectionLabel('Cài đặt chung'),
+                          const SizedBox(height: 8),
+                          _buildGeneralSettingsCard(),
+                          const SizedBox(height: 32),
+                        ],
                       ],
                     ),
                   ),
                 ),
     );
   }
+
+  // ─── Settings Widgets ────────────────────────────────────────────────────
+
+  Widget _buildSectionLabel(String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Text(
+      label,
+      style: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: isDark ? Colors.white54 : Colors.black54,
+      ),
+    );
+  }
+
+  Widget _buildAdminCard() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.purpleAccent, Colors.blueAccent],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purpleAccent.withOpacity(0.25),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminDashboardScreen()),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            child: Row(
+              children: [
+                const Icon(Icons.admin_panel_settings, color: Colors.white, size: 28),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Admin Dashboard',
+                        style: GoogleFonts.inter(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Quản lý thành viên, đồng bộ API & cấu hình',
+                        style: GoogleFonts.inter(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGeneralSettingsCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? Colors.white.withValues(alpha: 0.04) : Colors.white;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.grey.shade200;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subtitleColor = isDark ? Colors.white54 : Colors.black54;
+
+    Widget _iconBg({required List<Color> colors, required IconData icon}) {
+      return Container(
+        width: 36, height: 36,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: colors),
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(color: colors[0].withValues(alpha: 0.3), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: Icon(icon, color: Colors.white, size: 18),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
+      child: Column(
+        children: [
+          // Dark Mode Toggle
+          ValueListenableBuilder<ThemeMode>(
+            valueListenable: ThemeManager.themeModeNotifier,
+            builder: (context, themeMode, _) {
+              final isCurrentDark = themeMode == ThemeMode.dark;
+              return ListTile(
+                leading: _iconBg(
+                  colors: isCurrentDark
+                      ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6)]
+                      : [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+                  icon: isCurrentDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                ),
+                title: Text('Chế độ tối', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+                trailing: Switch.adaptive(
+                  value: isCurrentDark,
+                  activeColor: const Color(0xFF8B5CF6),
+                  onChanged: (val) => ThemeManager.toggleTheme(val),
+                ),
+              );
+            },
+          ),
+          Divider(height: 1, indent: 16, endIndent: 16, color: borderColor),
+          // Help & Support
+          ListTile(
+            leading: _iconBg(
+              colors: [const Color(0xFF06B6D4), const Color(0xFF0891B2)],
+              icon: Icons.help_outline_rounded,
+            ),
+            title: Text('Trợ giúp & Hỗ trợ', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+            trailing: Icon(Icons.arrow_forward_ios, size: 14, color: subtitleColor),
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                  title: Text('Trợ giúp & Hỗ trợ', style: GoogleFonts.inter(fontWeight: FontWeight.bold, color: textColor)),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nếu bạn có bất kỳ câu hỏi hoặc cần hỗ trợ kỹ thuật, vui lòng liên hệ:', style: GoogleFonts.inter(color: subtitleColor)),
+                      const SizedBox(height: 16),
+                      Row(children: [const Icon(Icons.email, size: 18, color: Color(0xFF8B5CF6)), const SizedBox(width: 8), Text('support@trendtracker.com', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500))]),
+                      const SizedBox(height: 8),
+                      Row(children: [const Icon(Icons.phone, size: 18, color: Color(0xFF8B5CF6)), const SizedBox(width: 8), Text('+84 123 456 789', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500))]),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text('OK', style: TextStyle(color: Color(0xFF8B5CF6), fontWeight: FontWeight.bold)),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          Divider(height: 1, indent: 16, endIndent: 16, color: borderColor),
+          // About App
+          ListTile(
+            leading: _iconBg(
+              colors: [const Color(0xFFF59E0B), const Color(0xFFD97706)],
+              icon: Icons.info_outline_rounded,
+            ),
+            title: Text('Về Journal Trend Tracker', style: GoogleFonts.inter(color: textColor, fontWeight: FontWeight.w500)),
+            trailing: Icon(Icons.arrow_forward_ios, size: 14, color: subtitleColor),
+            onTap: () {
+              showAboutDialog(
+                context: context,
+                applicationName: 'Journal Trend Tracker',
+                applicationVersion: '1.0.0 (Production)',
+                applicationIcon: const Icon(Icons.trending_up_rounded, size: 48, color: Color(0xFF8B5CF6)),
+                children: [Text('Hệ thống theo dõi xu hướng nghiên cứu học thuật dựa trên kiến trúc microservices.', style: GoogleFonts.inter(fontSize: 14))],
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Profile Widgets ──────────────────────────────────────────────────────
 
   Future<void> _pickImage() async {
     try {
@@ -361,7 +556,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showAvatarPicker() {
-    final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
@@ -469,12 +663,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildAvatarSection() {
-    final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
     final textColorTertiary = isDark ? Colors.white54 : Colors.black45;
-    final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
+    final cardBorderColor = isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08);
 
     return Center(
       child: Column(
@@ -483,53 +676,77 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: _isEditing ? _showAvatarPicker : null,
             child: Stack(
               children: [
+                // Outer glow ring
                 Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Colors.purpleAccent, Colors.blueAccent],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    gradient: const SweepGradient(
+                      colors: [
+                        Color(0xFFEC4899),
+                        Color(0xFFEF4444),
+                        Color(0xFFF97316),
+                        Color(0xFFFBBF24),
+                        Color(0xFF10B981),
+                        Color(0xFF6366F1),
+                        Color(0xFFEC4899),
+                      ],
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                  child: CircleAvatar(
-                    radius: 54,
-                    backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
-                    backgroundImage: _pickedImage != null
-                        ? (kIsWeb
-                            ? NetworkImage(_pickedImage!.path)
-                            : FileImage(File(_pickedImage!.path)) as ImageProvider)
-                        : (_customAvatarUrl != null
-                            ? NetworkImage(_customAvatarUrl!)
-                            : null),
-                    child: _pickedImage == null && _customAvatarUrl == null
-                        ? Text(
-                            _nameController.text.isNotEmpty ? _nameController.text[0] : 'U',
-                            style: GoogleFonts.inter(
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.purpleAccent,
-                            ),
-                          )
-                        : null,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isDark ? const Color(0xFF0B0B0E) : Colors.white,
+                    ),
+                    child: CircleAvatar(
+                      radius: 52,
+                      backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.grey[200],
+                      backgroundImage: _pickedImage != null
+                          ? (kIsWeb
+                              ? NetworkImage(_pickedImage!.path)
+                              : FileImage(File(_pickedImage!.path)) as ImageProvider)
+                          : (_customAvatarUrl != null
+                              ? NetworkImage(_customAvatarUrl!)
+                              : null),
+                      child: _pickedImage == null && _customAvatarUrl == null
+                          ? ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                              ).createShader(bounds),
+                              child: Text(
+                                _nameController.text.isNotEmpty ? _nameController.text[0] : 'U',
+                                style: const TextStyle(
+                                  fontSize: 38,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            )
+                          : null,
+                    ),
                   ),
                 ),
                 if (_isEditing)
                   Positioned(
-                    bottom: 0,
-                    right: 0,
+                    bottom: 2,
+                    right: 2,
                     child: Container(
                       padding: const EdgeInsets.all(6),
                       decoration: const BoxDecoration(
-                        color: Colors.purpleAccent,
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+                        ),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.camera_alt,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16),
                     ),
                   ),
               ],
@@ -542,49 +759,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: TextField(
                 controller: _nameController,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 22, 
-                  fontWeight: FontWeight.bold, 
-                  color: textColor
-                ),
+                style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
                 decoration: InputDecoration(
-                  hintText: 'Enter name',
+                  hintText: 'Nhập tên',
                   hintStyle: TextStyle(color: textColorTertiary),
-                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
+                  focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Color(0xFF8B5CF6))),
                   enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: cardBorderColor)),
                   filled: false,
                 ),
               ),
             )
           else
-            Text(
-              _name,
-              style: GoogleFonts.inter(
-                fontSize: 22, 
-                fontWeight: FontWeight.bold, 
-                color: textColor
-              ),
-            ),
+            Text(_name, style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 6),
-          Text(
-            _email,
-            style: GoogleFonts.inter(fontSize: 14, color: textColorSecondary),
-          ),
+          Text(_email, style: GoogleFonts.inter(fontSize: 14, color: textColorSecondary)),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
             decoration: BoxDecoration(
-              color: Colors.purpleAccent.withOpacity(0.15),
+              gradient: const LinearGradient(
+                colors: [Color(0xFF8B5CF6), Color(0xFFEC4899)],
+              ),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.purpleAccent.withOpacity(0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             child: Text(
               _role,
-              style: GoogleFonts.inter(
-                fontSize: 12, 
-                fontWeight: FontWeight.w600, 
-                color: Colors.purpleAccent
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.white),
             ),
           ),
         ],
@@ -593,22 +800,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildQuickStatsCard() {
-    final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = isDark ? Colors.white.withOpacity(0.03) : Colors.black.withOpacity(0.02);
-    final cardBorderColor = isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.08);
-    final dividerColor = isDark ? Colors.white10 : Colors.black12;
 
     return Container(
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cardBorderColor),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6), Color(0xFF7C3AED)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF8B5CF6).withValues(alpha: 0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: () {
             Navigator.push(
               context,
@@ -616,18 +829,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ).then((_) => _loadProfileData());
           },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(18.0),
             child: Row(
               children: [
-                _buildStatItem(Icons.bookmark, '$_bookmarkCount', 'Bookmarks'),
-                Container(
-                  height: 40,
-                  width: 1,
-                  color: dividerColor,
-                ),
-                _buildStatItem(Icons.star, '$_followCount', 'Followed Topics'),
+                _buildStatItem(Icons.bookmark_rounded, '$_bookmarkCount', 'Bookmarks'),
+                Container(height: 40, width: 1, color: Colors.white.withValues(alpha: 0.3)),
+                _buildStatItem(Icons.star_rounded, '$_followCount', 'Followed Topics'),
                 const SizedBox(width: 8),
-                Icon(Icons.arrow_forward_ios, size: 16, color: isDark ? Colors.white30 : Colors.black38),
+                const Icon(Icons.arrow_forward_ios, size: 15, color: Colors.white70),
               ],
             ),
           ),
@@ -637,16 +846,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildStatItem(IconData icon, String value, String label) {
-    final theme = Theme.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final textColorSecondary = isDark ? Colors.white54 : Colors.black54;
-
     return Expanded(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: Colors.purpleAccent, size: 24),
+          Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 26),
           const SizedBox(width: 12),
           Flexible(
             child: Column(
@@ -655,16 +859,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   value,
-                  style: GoogleFonts.inter(
-                    fontSize: 18, 
-                    fontWeight: FontWeight.bold, 
-                    color: textColor
-                  ),
+                  style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   label,
-                  style: GoogleFonts.inter(fontSize: 11, color: textColorSecondary),
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.white70),
                   overflow: TextOverflow.ellipsis,
                 ),
               ],
@@ -713,7 +913,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required bool enabled,
     required int maxLines,
   }) {
-    final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
@@ -762,7 +961,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildResearchInterestsSection() {
-    final theme = Theme.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final textColorSecondary = isDark ? Colors.white70 : Colors.black54;
