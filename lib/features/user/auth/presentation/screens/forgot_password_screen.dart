@@ -89,6 +89,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     Widget bodyContent;
     if (_currentStep == 1) {
@@ -100,26 +101,64 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () {
-            if (_currentStep == 2) {
-              setState(() {
-                _currentStep = 1;
-                _errorMessage = null;
-              });
-            } else {
-              context.pop();
-            }
-          },
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: isDark
+              ? const LinearGradient(
+                  colors: [Color(0xFF0B0B0E), Color(0xFF1A0A2E), Color(0xFF0D0D1A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : const LinearGradient(
+                  colors: [Color(0xFFF3F4F6), Color(0xFFEDE9FE), Color(0xFFFCE7F3)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
         ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: bodyContent,
+        child: SafeArea(
+          child: Stack(
+            children: [
+              Positioned(
+                top: 8,
+                left: 8,
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back_ios_new_rounded, color: isDark ? Colors.white : Colors.black87),
+                  onPressed: () {
+                    if (_currentStep == 2) {
+                      setState(() {
+                        _currentStep = 1;
+                        _errorMessage = null;
+                      });
+                    } else {
+                      context.pop();
+                    }
+                  },
+                ),
+              ),
+              Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 450),
+                    child: Card(
+                      color: isDark ? const Color(0xFF16161E).withValues(alpha: 0.8) : Colors.white.withValues(alpha: 0.9),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: isDark ? Colors.white12 : Colors.black.withValues(alpha: 0.05),
+                          width: 1,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(32.0),
+                        child: bodyContent,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

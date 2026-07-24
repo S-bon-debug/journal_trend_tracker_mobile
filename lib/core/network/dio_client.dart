@@ -10,8 +10,8 @@ class DioClient {
     _dio = Dio(
       BaseOptions(
         baseUrl: '${ApiConfig.identityUrl}/api/',
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
       ),
     );
     _dio.interceptors.add(JwtInterceptor());
